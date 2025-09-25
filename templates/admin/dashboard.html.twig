@@ -1,0 +1,163 @@
+{% extends 'base.html.twig' %} 
+
+{% block title %}Dashboard{% endblock %}
+
+{% block head %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('styles/admin_dashboard.css') }}" />
+{% endblock %}
+
+
+  
+{% block body %}
+
+
+<section class="p-3 main-content">
+{% block headertitle %}
+<h2 class="m-0 fs-2 mt-3 text-start custom_h2">Dashboard</h2>
+{% endblock %} 
+
+<div class="grid-container-dashboard ">
+      <ul>
+        <li><a href="{{ path('profiles') }}">Alle profielen</a></li>
+        {% if is_granted('ROLE_SUPERADMIN') %}
+            <li><a href="{{ path('conceptRooster')}}">Concept rooster</a></li>
+        {% endif %}
+        <li><a href="{{ path('schedule_employee') }}">Rooster inplannen</a></li>
+        <li><a href="{{path('weekrooster')}}">Aanwezigheidsregistratie</a></li>
+        <li><a href="{{path('app_share_rooster')}}">Pdf weekrooster</a></li>
+        <li><a href="{{path('create_employee')}}">Medewerker aanmaken</a></li>
+        <li><a href="{{path('projects')}}">Projecten</a></li>
+        {% if is_granted('ROLE_SUPERADMIN') %}
+        <li><a href="{{ path('rapportage')}}">Rapportage</a></li>
+          {# <li><a href="{{ path('assign_rights')}}">Rechten instellen</a></li> #}
+          <li><a href="{{path('settings')}}">Instellingen</a></li>
+        {% endif %}
+      </ul>
+    </div>
+ {# Dashboard data - in a real application, this would come from the controller #}
+  {# {% set currentWeek = 45 %}
+  {% set departments = [
+      {
+          'name': 'Meedraaien',
+          'attendance': 100,
+          'employees': [
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Ziek'}
+          ]
+      },
+      {
+          'name': 'Algemeen',
+          'attendance': 85,
+          'employees': [
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Ziek'}
+          ]
+      },
+      {
+          'name': 'Refurbishment',
+          'attendance': 85,
+          'employees': [
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Ziek'}
+          ]
+      },
+      {
+          'name': 'Beheer',
+          'attendance': 100,
+          'employees': [
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Ziek'}
+          ]
+      },
+      {
+          'name': 'Magazijn',
+          'attendance': 85,
+          'employees': [
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Ziek'}
+          ]
+      },
+      {
+          'name': '3e leerweg',
+          'attendance': 85,
+          'employees': [
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Vrij'},
+              {'name': 'Noah van der Berg', 'status': 'Ziek'}
+          ]
+      }
+  ] %}
+
+  <div class="dashboard-header">
+      <h2 class="text-dark text-start mb-4">niet afgevinkt vandaag</h2>
+      
+      <div class="department-selector">
+          <span>Afdeling</span>
+          <span>&#9660;</span>
+      </div>
+  </div>
+  
+  <div class="week-selector">
+      <button class="week-button">&#9664;</button>
+      <div class="week-display">Week {{ currentWeek }}</div>
+      <button class="week-button">&#9654;</button>
+  </div>
+  
+  <div class="dashboard-grid">
+      {% for department in departments %}
+          <div class="department-card">
+              <h2 class="department-title">{{ department.name }}</h2>
+              
+              <div class="progress-container">
+                  <div class="progress-bar">
+                      <div class="progress-fill {{ department.attendance == 100 ? 'full' : 'partial' }}" 
+                           style="width: {{ department.attendance }}%;">
+                      </div>
+                  </div>
+                  <div class="progress-text">{{ department.attendance }}%</div>
+              </div>
+              
+              <div class="attendance-info">
+                  <div>Aantal medewerkers:</div>
+                  <div>Aantal aanwezig:</div>
+              </div>
+              
+              <div class="employee-list">
+                  {% for employee in department.employees %}
+                      <div class="employee-row">
+                          <div class="employee-name">{{ employee.name }}</div>
+                          <div class="employee-status">{{ employee.status }}</div>
+                          <div class="status-icon">
+                              {% if employee.status == 'Vrij' %}
+                                  ✓
+                              {% else %}
+                                  ✗
+                              {% endif %}
+                          </div>
+                      </div>
+                  {% endfor %}
+              </div>
+          </div>
+      {% endfor %}
+  </div> #}
+
+</section>
+{% endblock %}

@@ -1,0 +1,657 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Aanwezigheidsregistratie{% endblock %}
+
+{% block head %}
+{{ parent() }}
+<link rel="stylesheet" href="{{ asset('styles/weekrooster.css') }}">
+
+{% endblock %}
+    
+{% block body %}
+
+<section class="p-3 main-content">
+            {% block headertitle %}
+                <h2 class="m-0 fs-2 mt-3 text-start custom_h2">Aanwezigheidsregistratie</h2>
+            {% endblock %}
+    
+    <section class="p-2 mt-3">
+    <div class="d-flex flex-row justify-content-between mb-2">
+          <div class="relative search-container" style="position: relative;">
+      <input type="text" id="searchInput" placeholder="Zoeken medewerker..." class="search-input">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" class="bi bi-search" viewBox="0 0 16 16">
+        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.442 1.398a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+      </svg>
+      <div id="autocompleteList" class="list-group"></div> <!-- Zet deze HIER binnen de container -->
+    </div>
+        <div class="d-flex flex-row w-50 justify-content-center mobileNoView">
+            {% if is_granted("ROLE_SUPERADMIN") %}
+        {# <a href="{{ path('weekrooster_different_week_no_register', { 'year': year, 'weekNumber': weekNumber }) }}"><button class="btn bg-color-sky-blue mx-1">Niet Geregistreerde</button></a> #}
+            <a id="overzichtButton"><button class='btn bg-color-sky-blue mx-1' type="button">Weekoverzicht</button></a>
+                
+            {% endif %}
+            
+        </div>
+         <div class="w-25 border border-2 me-1 d-flex flex-row justify-content-between rounded week-selector-header">
+            {% if is_granted("ROLE_SUPERADMIN") %}
+                <button	type="button"	id="prev-week"	class="border border-0 week-selector-btn">
+						<i	class="bi bi-arrow-left-short"></i>
+					</button>
+            {% endif %}     
+            <span class="d-flex align-items-center gap-2">
+                Week
+                <input type="number" id="week-input" min="1" max="53" value="{{ weekNumber }}" />
+                van
+                <input type="number" id="year-input" min="2020" max="2100" value="{{ year }}" />
+            </span>
+            {% if is_granted("ROLE_SUPERADMIN") %}
+                <button	type="button"	id="next-week"	class="border border-0 week-selector-btn">
+						<i	class="bi bi-arrow-right-short"></i>
+					</button>
+            {% endif %} 
+        </div>
+    
+    </div>
+        {% set days = {'monday': 'Maandag', 'tuesday': 'Dinsdag', 'wednesday': 'Woensdag', 'thursday': 'Donderdag', 'friday': 'Vrijdag'} %}
+        {% set types = ['' ,'Aanwezig', 'Afwezig',"Te laat", "Niet verwacht", 'Ziek', 'Vrij', 'Eerder weg', 'Thuiswerken'] %}
+    
+        <form id="attendanceWeekForm" class="hidden">
+            <table>
+                <thead>
+                    <tr class="border-bottom-1">
+                        <th class="text-start d-flex justify-content-between">Naam
+                        <select name="daySelect" id="daySelect" class="rounded">
+                            <option value="show"></option>
+                            {% for day, dag in days %}  
+                                <option value={{day}}>{{dag}}</option>
+                            {% endfor %}
+                        </select>
+                        </th>
+                        {% for day, dag in days %}  
+                            <th class="border-bottom-1 {{day}}td">{{ dag }}<br>{{ weekDates[loop.index - 1] }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody id="attendanceTableBody">
+                    {% for schedule in schedules %}
+                        {% set user = schedule.user %}
+                        <tr class="fullRow" data-medewerker="{{user.profile.name}}">
+                            <td class="name text-start">
+                                <i class="bi bi-person-circle profile-icon"></i>
+                                <a href="{{ path('profile_view', {'id': user.id}) }}">{{ user.profile.name }}</a> - {{ user.profile.department }}
+                            </td>
+                            {% for day, dag in days %}
+                                <td class="{{day}}td text-center">   
+                                    {% if schedule.scheduled["schedule"][day]["different_timing"]["scheduled"] %}
+                                    {% set color = settings.colors[schedule.scheduled["schedule"][day]['different_timing']["attended"]] ?? '#FFFFFF' %}
+                                        <div class="p-1 w-100 mb-1 {{day}}-different_timing-{{user.id}}" id="{{user.id}}-{{day}}-different_timing" style = "background-color:{{color}}; width:1%; margin-bottom:-3%;"></div>
+                                            <span>{{schedule.scheduled["schedule"][day]["different_timing"]["scheduled"]}}</span>
+                                            <hr/>
+                                            <select id="selector-attendence" name="selector" class="w-75 rounded selector-attendence mx-auto d-block"
+                                                data-user-id = "{{user.id}}"
+                                                data-day = "{{day}}"
+                                                data-day-slot = "different_timing">
+                                                {% for type in types %}
+                                                    {% if type != 'Niet verwacht' %}
+                                                        <option value="{{type}}" {{ schedule.scheduled["schedule"][day]["different_timing"]["attended"]==type ? 'selected' : '' }}>{{type}}</option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </select>
+  
+                                    {% elseif schedule.scheduled["schedule"][day]['morning']["scheduled"] and schedule.scheduled["schedule"][day]['afternoon']["scheduled"]%}
+                                        {% set color = settings.colors[schedule.scheduled["schedule"][day]['morning']["attended"]] ?? '#FFFFFF' %}
+                                        <div>
+                                            <div class="p-1 w-100 mb-1 {{day}}-whole_day-{{user.id}}" id="{{user.id}}-{{day}}-whole_day" style = "background-color:{{color}}; width:1%; margin-bottom:-3%;"></div>
+                                            <span>Hele dag</span>
+                                            <hr/>
+                                            <select id="selector" name="selector" class="w-75 rounded selector-attendence mx-auto d-block"
+                                                data-user-id = "{{user.id}}"
+                                                data-day = "{{day}}"
+                                                data-day-slot = "whole_day">
+                                                {% for type in types %}
+                                                    {% if type != 'Niet verwacht' %}
+                                                        <option value="{{type}}" {{ schedule.scheduled["schedule"][day]["morning"]["attended"]==type ? 'selected' : '' }}>{{type}}</option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </select> 
+                                        </div>
+                                    {% elseif schedule.scheduled["schedule"][day]['morning']["scheduled"] or schedule.scheduled["schedule"][day]['afternoon']["scheduled"] %}
+                                        {% set timeSlots = {'morning': 'Ochtend', 'afternoon': 'Middag'} %}
+                                        {% for timeSlot_en, timeSlot_nl in timeSlots %}
+                                            {% if schedule.scheduled["schedule"][day][timeSlot_en]["scheduled"] %} 
+                                                {% set color = settings.colors[schedule.scheduled["schedule"][day][timeSlot_en]["attended"]] ?? '#FFFFFF' %}
+                                                <div>
+                                                <div class="p-1 w-100 mb-1 {{day}}-{{timeSlot_en}}-{{user.id}}" id="{{user.id}}-{{day}}-{{timeSlot_en}}" style = "background-color:{{color}}; width:1%; margin-bottom:-3%;"></div>
+                                                    <span>{{timeSlot_nl}}</span>
+                                                    <hr/>
+                                                    <select id="selector" name="selector" class="w-75 rounded selector-attendence mx-auto d-block"
+                                                        data-user-id = "{{user.id}}"
+                                                        data-day = "{{day}}"
+                                                        data-day-slot = "{{timeSlot_en}}">
+                                                        {% for type in types %}
+                                                            {% if type != 'Niet verwacht' %}
+                                                                <option value="{{type}}" {{ schedule.scheduled["schedule"][day][timeSlot_en]["attended"]==type ? 'selected' : '' }}>{{type}}</option>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <select id="selector" name="selector" class="w-75 rounded selector-no-schedule mx-auto d-block"
+                                            data-user-id = "{{user.id}}"
+                                            data-day = "{{day}}"
+                                            data-attendence = "Niet verwacht">
+                                            <option value = ''>-</option>
+                                            <option value = 'morning' {{ schedule.scheduled["schedule"][day]["morning"]["attended"]=='Niet verwacht' ? 'selected' : '' }}>Ochtend</option>
+                                            <option value = 'afternoon' {{ schedule.scheduled["schedule"][day]["afternoon"]["attended"]=='Niet verwacht' ? 'selected' : '' }}>Middag</option>
+                                            <option value = 'whole_day' {{ schedule.scheduled["schedule"][day]["afternoon"]["attended"] == 'Niet verwacht' and schedule.scheduled["schedule"][day]["morning"]["attended"] == 'Niet verwacht' ? 'selected' : '' }}>Hele dag</option> 
+                                        </select>
+                                        <hr/>
+                                        
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
+      
+        <form id="attendanceDayForm">
+            <table> 
+            {% set currentDay = "now"|date('l')|lower %}
+                <thead>
+                    <tr>
+                        <th class="text-start ps-2 " id="sortNames">Naam <span>&#9662;</span> </th>
+                        <th class="text-start ps-2 mobileNoView" id="sortDepartment">Afdeling <span style=>&#9662;</span> </th>
+                        {% for day, dag in days %}
+                            {% if day == currentDay %}  
+                                <th class="text-end pe-2">
+                                    <button class='btn bg-color-sky-blue me-1 mb-1' id='attendedShownToggle' type="button"></button>
+                                    {{ dag }} - {{ weekDates[loop.index - 1] }}
+                                </th>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody id="attendanceDayTableBody">
+                    {% for schedule in schedules %}
+                        {% set user = schedule.user %}
+                        {% for day, dag in days %}
+                            {% if day == currentDay %}
+                                <tr data-medewerker="{{user.profile.name}}"
+                                    data-user-id-tr = "{{user.id}}"
+                                    data-department="{{user.profile.department}}" 
+                                    data-morning="{{schedule.scheduled["schedule"][currentDay]['morning']["scheduled"]}}"
+                                    data-afternoon="{{schedule.scheduled["schedule"][currentDay]['afternoon']["scheduled"]}}"
+                                    data-different="{{schedule.scheduled["schedule"][currentDay]["different_timing"]["scheduled"]}}"
+                                    data-morning-attended="{{schedule.scheduled["schedule"][currentDay]['morning']["attended"]}}"
+                                    data-afternoon-attended="{{schedule.scheduled["schedule"][currentDay]['afternoon']["attended"]}}"
+                                    data-different-attended="{{schedule.scheduled["schedule"][currentDay]["different_timing"]["attended"]}}"
+                                    class='userRow'>
+                                    <td class="name text-start ps-2">
+                                        <i class="bi bi-person-circle profile-icon"></i>
+                                        <a href="{{ path('profile_view', {'id': user.id}) }}">{{ user.profile.name }}</a> <span class="mobileView departmentSmall"> {{schedule.scheduled["schedule"][day]["department"]}} </span>
+                                    </td>
+                                    <td class="departmentSmall text-start fs-6 ps-2 mobileNoView">{{ schedule.scheduled["schedule"][day]["department"] }}</td>
+                                    <td class= " text-end ps-2">   
+                                        {% if schedule.scheduled["schedule"][day]["different_timing"]["scheduled"] %}
+                                        {# different_timing day view #}
+                                            {% set color = settings.colors[schedule.scheduled["schedule"][day]['different_timing']["attended"]] ?? '#FFFFFF' %}
+                                            <div class="p-1 w-100 mb-1 mobileViewDiv {{day}}-different_timing-{{user.id}}" id="{{user.id}}-{{day}}-different_timing" style = "background-color:{{color}}; margin-bottom:-3%;"></div>
+                                            <div class= 'd-flex mobileFlex flex-end justify-content-end pe-1'>
+                                                {{schedule.scheduled["schedule"][day]["different_timing"]["scheduled"]}} <br class="mobileView"/>
+                                                <div class="p-1 mb-1 ms-3 mobileNoViewDiv {{day}}-different_timing-{{user.id}} square" id="{{user.id}}-{{day}}-different_timing" style = "background-color:{{color}}; margin-bottom:-3%;"></div>
+                                                <select id="selector-attendence" name="selector" class="mobileWidth p-1 rounded selector-attendence d-block"
+                                                    data-user-id = "{{user.id}}"
+                                                    data-day = "{{day}}"
+                                                    data-day-slot = "different_timing">
+                                                    {% for type in types %}
+                                                        {% if type != 'Niet verwacht' %}
+                                                            <option value="{{type}}" {{ schedule.scheduled["schedule"][day]["different_timing"]["attended"]==type ? 'selected' : '' }}>{{type}}</option>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </select>
+                                            </div>  
+                                        {% elseif schedule.scheduled["schedule"][day]['morning']["scheduled"] and schedule.scheduled["schedule"][day]['afternoon']["scheduled"]%}
+                                        {# whole day day view #}
+                                            {% set color = settings.colors[schedule.scheduled["schedule"][day]['morning']["attended"]] ?? '#FFFFFF' %} 
+                                            <div class="p-1 w-100 mb-1 mobileViewDiv {{day}}-whole_day-{{user.id}}" id="{{user.id}}-{{day}}-whole_day" style = "background-color:{{color}};  margin-bottom:-3%;"></div>
+                                            <div class= 'd-flex mobileFlex flex-end justify-content-end pe-1'>
+                                                Hele dag  <br class="mobileView"/>
+                                                <div class="p-1 mb-1 ms-3 {{day}}-whole_day-{{user.id}} mobileNoViewDiv square" id="{{user.id}}-{{day}}-whole_day" style = "background-color:{{color}};  margin-bottom:-3%;"></div>
+                                                <select id="selector" name="selector" class="mobileWidth p-1 rounded selector-attendence d-block"
+                                                    data-user-id = "{{user.id}}"
+                                                    data-day = "{{day}}"
+                                                    data-day-slot = "whole_day">
+                                                    {% for type in types %}
+                                                        {% if type != 'Niet verwacht' %}
+                                                            <option value="{{type}}" {{ schedule.scheduled["schedule"][day]["morning"]["attended"]==type ? 'selected' : '' }}>{{type}}</option>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        {% elseif schedule.scheduled["schedule"][day]['morning']["scheduled"] or schedule.scheduled["schedule"][day]['afternoon']["scheduled"] %}
+                                        {# part day day view both morning and afternoon #}
+                                            {% if schedule.scheduled["schedule"][day]['morning']["scheduled"] %}
+                                                {% set color = settings.colors[schedule.scheduled["schedule"][day]['morning']["attended"]] ?? '#FFFFFF' %}
+                                            {% else %}
+                                                {% set color = settings.colors[schedule.scheduled["schedule"][day]['afternoon']["attended"]] ?? '#FFFFFF' %}
+                                            {% endif %}
+                                            {% set timeSlots = {'morning': 'Ochtend', 'afternoon': 'Middag'} %}
+                                            {% for timeSlot_en, timeSlot_nl in timeSlots %}
+                                                {% if schedule.scheduled["schedule"][day][timeSlot_en]["scheduled"] %}   
+                                                    <div class="p-1 w-100 mb-1 mobileViewDiv {{day}}-{{timeSlot_en}}-{{user.id}}" id="{{user.id}}-{{day}}-{{timeSlot_en}}" style = "background-color:{{color}}; margin-bottom:-3%;"></div>
+                                                    <div class= 'd-flex mobileFlex flex-end justify-content-end pe-1'>   
+                                                        {{timeSlot_nl}} <br class="mobileView"/>
+                                                        <div class="p-1 ms-3 mb-1 mobileNoViewDiv {{day}}-{{timeSlot_en}}-{{user.id}} square" id="{{user.id}}-{{day}}-{{timeSlot_en}}" style = "background-color:{{color}}; margin-bottom:-3%;"></div>
+                                                        <select id="selector" name="selector" class="mobileWidth p-1 rounded selector-attendence   d-block"
+                                                            data-user-id = "{{user.id}}"
+                                                            data-day = "{{day}}"
+                                                            data-day-slot = "{{timeSlot_en}}">
+                                                            {% for type in types %}
+                                                                {% if type != 'Niet verwacht' %}
+                                                                    <option value="{{type}}" {{ schedule.scheduled["schedule"][day][timeSlot_en]["attended"]==type ? 'selected' : '' }}>{{type}}</option>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% else %}
+                                        {# not Scheduled #}
+                                            <select id="selector" name="selector" class="w-25 me-4 p-1 rounded selector-no-schedule mx-auto d-block text-center"
+                                                data-user-id = "{{user.id}}"
+                                                data-day = "{{day}}"
+                                                data-attendence = "Niet verwacht">
+                                                <option value = ''>-</option>
+                                                <option value = 'morning' {{ schedule.scheduled["schedule"][day]["morning"]["attended"]=='Niet verwacht' ? 'selected' : '' }}>Ochtend</option>
+                                                <option value = 'afternoon' {{ schedule.scheduled["schedule"][day]["afternoon"]["attended"]=='Niet verwacht' ? 'selected' : '' }}>Middag</option>
+                                                <option value = 'whole_day' {{ schedule.scheduled["schedule"][day]["afternoon"]["attended"] == 'Niet verwacht' and schedule.scheduled["schedule"][day]["morning"]["attended"] == 'Niet verwacht' ? 'selected' : '' }}>Hele dag</option> 
+                                            </select>
+                                             <br class="mobileView"/>
+                                            Niet Verwacht
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endif %}   
+                        {% endfor %}
+
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
+    </section>
+</section>
+
+<script src="{{ asset('js/profiles/Searchfunction.js')}}"></script>
+<script src="{{ asset('js/profiles/sortDepartment.js')}}"></script>
+<script src="{{ asset('js/profiles/sortNames.js')}}"></script>
+<script src="{{ asset('js/weekrooster/display.js')}}"></script>
+<script src="{{ asset('js/weekrooster/highlightUnregistered.js')}}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const week = {{weekNumber}};
+        const year = {{year}};
+
+        function initializeEventListeners() {
+            document.querySelectorAll('.selector-attendence').forEach(function (input) {
+            input.addEventListener('change', function () {
+                const userId = this.getAttribute('data-user-id');
+                const day = this.getAttribute('data-day');
+                const daySlot = this.getAttribute('data-day-slot');
+                const value = this.value;
+
+                const payload = {
+                    userId: userId,
+                    year: year,
+                    week: week,
+                    day: day,
+                    daySlot: daySlot,
+                    value: value
+                };
+
+                fetch('{{ path("update_attendence") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token('attendance') }}'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const userRow = document.querySelector(`tr[data-user-id-tr="${userId}"]`);
+
+                    // Update only the relevant slot
+                    if (daySlot === 'morning') {
+                        userRow.setAttribute('data-morning-attended', value);
+                    } else if (daySlot === 'afternoon') {
+                        userRow.setAttribute('data-afternoon-attended', value);
+                    } else if (daySlot === 'different_timing') {
+                        userRow.setAttribute('data-different-attended', value);
+                    }
+
+                    // Update background color
+                    let allColors = {{ settings.colors|json_encode|raw }};
+                    let newColor = allColors[value] || '#FFFFFF';
+                    let query = `.${day}-${daySlot}-${userId}`;
+                    document.querySelectorAll(query).forEach(function (element) {
+                        element.style.backgroundColor = newColor;
+                    });
+
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+});
+
+
+            document.querySelectorAll('.selector-no-schedule').forEach(function (input) {
+                input.addEventListener('change', function () {
+                    const userId = this.getAttribute('data-user-id');
+                    const day = this.getAttribute('data-day');
+                    const daySlot = this.value;
+                    const value = this.getAttribute('data-attendence');
+
+                    const payload = {
+                        userId: userId,
+                        year: year,
+                        week: week,
+                        day: day,
+                        daySlot: daySlot,
+                        value: value
+                    };
+                    fetch('{{ path("update_no_schedule")}}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token('attendance') }}'
+                        },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(response => response.json())
+                    .catch(error => {
+                        console.error('Error:', error);
+                    })
+                })
+            });
+
+            const searchInput = document.getElementById('searchInput');
+            const autocompleteList = document.getElementById('autocompleteList');
+            autocompleteList.classList.add('list-group', 'position-absolute', 'mt-2', 'w-100', 'z-3');
+            const employees = [
+                {% for schedule in schedules %}
+                    {
+                        name: "{{ schedule.user.profile.name|e('js') }}",
+                        firstName: "{{ schedule.user.profile.name|split(' ')[0]|e('js') }}",
+                        lastName: "{{ schedule.user.profile.name|split(' ')|length > 1 ? schedule.user.profile.name|split(' ')[schedule.user.profile.name|split(' ')|length-1]|e('js') : '' }}"
+                    }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ];
+
+            searchInput.addEventListener('input', function () {
+                let inputText = this.value.trim();
+                let selectedNames = inputText.length > 0 ? inputText.split(',').map(name => name.trim()).filter(name => name.length > 0) : [];
+                let query = '';
+                if (inputText.endsWith(',')) {
+                    query = '';
+                } else {
+                    query = selectedNames.length > 0 ? selectedNames[selectedNames.length - 1].toLowerCase() : '';
+                }
+
+                autocompleteList.innerHTML = '';
+
+                if (query.length > 0) {
+                    const filteredEmployees = employees.filter(employee =>
+                        employee.name.toLowerCase().includes(query) ||
+                        employee.firstName.toLowerCase().includes(query) ||
+                        employee.lastName.toLowerCase().includes(query)
+                    ).map(employee => employee.name);
+
+                    if (filteredEmployees.length > 0) {
+                        [...new Set(filteredEmployees)].forEach(employee => {
+                            const listItem = document.createElement('li');
+                            listItem.classList.add('list-group-item');
+                            listItem.textContent = employee;
+
+                            listItem.addEventListener('click', function () {
+                                selectedNames[selectedNames.length - 1] = employee;
+                                searchInput.value = selectedNames.join(', ') + ', ';
+                                autocompleteList.innerHTML = '';
+                                autocompleteList.style.display = 'none';
+                                searchInput.dispatchEvent(new Event('change'));
+                                updateTable(selectedNames);
+                            });
+
+                            autocompleteList.appendChild(listItem);
+                        });
+
+                        autocompleteList.style.position = 'absolute';
+                        autocompleteList.style.top = `${searchInput.offsetTop + searchInput.offsetHeight}px`;
+                        autocompleteList.style.left = `${searchInput.offsetLeft}px`;
+                        autocompleteList.style.width = `${searchInput.offsetWidth}px`;
+                        autocompleteList.style.display = 'block';
+                    } else {
+                        autocompleteList.style.display = 'none';
+                    }
+                } else {
+                    autocompleteList.style.display = 'none';
+                }
+
+                updateTable(selectedNames);
+            });
+
+            function updateTable(selectedNames) {
+                const userRows = document.querySelectorAll('.fullRow, .userRow');
+                let matchedFullNames = [];
+                selectedNames.forEach(name => {
+                    const search = name.toLowerCase();
+                    employees.forEach(emp => {
+                        const fullLastName = emp.name.split(' ').slice(1).join(' ').toLowerCase();
+                        if (
+                            emp.name.toLowerCase().includes(search) ||
+                            emp.firstName.toLowerCase().includes(search) ||
+                            fullLastName.includes(search)
+                        ) {
+                            matchedFullNames.push(emp.name);
+                        }
+                    });
+                });
+                matchedFullNames = [...new Set(matchedFullNames)];
+
+                if (selectedNames.length === 0 || matchedFullNames.length === 0) {
+                    userRows.forEach(row => {
+                        row.style.display = '';
+                    });
+                    return;
+                }
+
+                userRows.forEach(row => {
+                    const username = row.getAttribute('data-medewerker');
+                    row.style.display = matchedFullNames.includes(username) ? '' : 'none';
+                });
+            }
+
+        }
+
+        initializeEventListeners();
+
+        const overzichtButton = document.getElementById('overzichtButton');
+        const weekForm = document.getElementById('attendanceWeekForm');
+        const dayForm = document.getElementById('attendanceDayForm');
+        if (overzichtButton && weekForm && dayForm) {
+            overzichtButton.addEventListener('click', function() {
+                if (overzichtButton.textContent.trim().toLowerCase().includes('dag')) {
+                    weekForm.classList.add('hidden');
+                    dayForm.classList.remove('hidden');
+
+                   document.querySelector('#overzichtButton').innerHTML = `<button class='btn bg-color-sky-blue mx-1' type="button">Weekoverzicht</button>`;
+
+                } else {
+                    dayForm.classList.add('hidden');
+                    weekForm.classList.remove('hidden');
+                    overzichtButton.textContent = 'Vandaag';
+                document.querySelector('#overzichtButton').innerHTML = `<button class='btn bg-color-sky-blue mx-1' type="button">Vandaag</button>`;
+
+                }
+                initializeEventListeners();
+            });
+        }
+
+        function updateSchedule(week, year) { // Update the page URL and reload
+            if (week == "33" && year == "2024") {
+                document.getElementById('prev-week').setAttribute('disabled', true);
+                window.location.href = `{{ path('weekrooster_different_week', { 'year': 'YEAR', 'weekNumber': 'WEEK'}) }}`.replace('YEAR', year).replace('WEEK', week);
+                return;
+            }
+            document.getElementById('prev-week').removeAttribute('disabled', false)
+            window.location.href = `{{ path('weekrooster_different_week', { 'year': 'YEAR', 'weekNumber': 'WEEK'}) }}`.replace('YEAR', year).replace('WEEK', week);
+        }
+
+        function has53weeks(year) {
+            const first_day = new Date(year, 0, 1);
+            const first_day_number = first_day.getDay();
+            if (year % 4 == 0) { // leap year
+                return false
+            } else if (first_day_number == 4) { // ISO weeknumber starts when 
+                return true
+            } else {
+                return false
+            }
+        }
+
+        prevWeekButton = document.getElementById('prev-week')
+        if(prevWeekButton){
+            prevWeekButton.addEventListener('click', function () { //Changes the weeknummer to be one lower than the current loaded weeknumber
+                currentWeek = {{ weekNumber }};
+                currentYear = {{ year }};
+                if (currentWeek > 1) {
+                    currentWeek--;
+                } else {
+                    currentYear--;
+                    if (has53weeks(currentYear)) {
+                        currentWeek = 53;
+                    } else {
+                        currentWeek = 52;
+                    }
+                } 
+                updateSchedule(currentWeek, currentYear);
+            });
+        }
+
+        nextWeekButton = document.getElementById('next-week')
+        if (nextWeekButton){
+            nextWeekButton.addEventListener('click', function () { //Changes the weeknummer to be one higher than the current loaded weeknumber
+                currentWeek = {{ weekNumber }};
+                currentYear = {{ year }};
+                if (has53weeks(currentYear)){
+                    if (currentWeek < 53) {
+                        currentWeek++;
+                    } else {
+                        currentWeek = 1;
+                        currentYear++;
+                    } 
+                } else {
+                    if (currentWeek < 52) {
+                        currentWeek++;
+                    } else {
+                        currentWeek = 1;
+                        currentYear++;
+                    } 
+                }
+                updateSchedule(currentWeek, currentYear);
+            });
+        }
+
+        function hideRow (tds){
+            tds.forEach(function(td){
+                td.style.display = 'none'
+            })
+        }
+
+        function showRow (tds){
+            tds.forEach(function(td){
+                td.style.display = 'table-cell'
+            })
+        }
+
+        const daySelector = document.querySelector('#daySelect');
+        const mondayTds = document.querySelectorAll('.mondaytd');
+        const tuesdayTds = document.querySelectorAll('.tuesdaytd');
+        const wednesdayTds = document.querySelectorAll('.wednesdaytd');
+        const thursdayTds = document.querySelectorAll('.thursdaytd');
+        const fridayTds = document.querySelectorAll('.fridaytd');
+        daySelector.addEventListener('change', function(){
+            dayValue = daySelector.value;
+            console.log(dayValue);
+            switch (dayValue){
+                case 'show':
+                    showRow(mondayTds);
+                    showRow(tuesdayTds);
+                    showRow(wednesdayTds);
+                    showRow(thursdayTds);
+                    showRow(fridayTds);
+                    break;
+                case 'monday':
+                    showRow(mondayTds);
+                    hideRow(tuesdayTds);
+                    hideRow(wednesdayTds);
+                    hideRow(thursdayTds);
+                    hideRow(fridayTds);
+                    break;
+                case 'tuesday':
+                    hideRow(mondayTds);
+                    showRow(tuesdayTds);
+                    hideRow(wednesdayTds);
+                    hideRow(thursdayTds);
+                    hideRow(fridayTds);
+                    break;
+                case 'wednesday':
+                    hideRow(mondayTds);
+                    hideRow(tuesdayTds);
+                    showRow(wednesdayTds);
+                    hideRow(thursdayTds);
+                    hideRow(fridayTds);
+                    break;
+                case 'thursday':
+                    hideRow(mondayTds);
+                    hideRow(tuesdayTds);
+                    hideRow(wednesdayTds);
+                    showRow(thursdayTds);
+                    hideRow(fridayTds);
+                    break;
+                case 'friday':
+                    hideRow(mondayTds);
+                    hideRow(tuesdayTds);
+                    hideRow(wednesdayTds);
+                    hideRow(thursdayTds);
+                    showRow(fridayTds);
+                    break;
+            }
+        });
+    });
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+    const weekInput = document.getElementById('week-input');
+    const yearInput = document.getElementById('year-input');
+
+    function goToSelectedWeek() {
+        let week = parseInt(weekInput.value, 10);
+        let year = parseInt(yearInput.value, 10);
+        if (week >= 1 && week <= 53 && year >= 2020 && year <= 2100) {
+            const url = `{{ path('weekrooster_different_week', { 'year': 'YEAR', 'weekNumber': 'WEEK'}) }}`
+                .replace('YEAR', year)
+                .replace('WEEK', week);
+            window.location.href = url;
+        }
+    }
+
+    weekInput.addEventListener('change', goToSelectedWeek);
+    yearInput.addEventListener('change', goToSelectedWeek);
+});
+</script>
+{% endblock %}

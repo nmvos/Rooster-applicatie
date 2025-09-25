@@ -1,0 +1,291 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}
+    {{ profile.name }}'s Schedule
+{% endblock %}
+
+{% block head %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/profile_view.css') }}">
+{% endblock %}
+
+{% block headertitle %}
+    <div class="header-middle d-flex flex-row justify-content-evenly align-items-center">
+        <h1 class="my-0 mx-2 fs-2" id='headerName'>{{ profile.name }}</h1>
+    </div>
+{% endblock %}
+
+{% block body %}
+    <main class="p-3 main-content">
+        <h2 class="m-0 fs-2 mt-3 text-start custom_h2">
+            Profiel
+
+        </h2>
+        <div class='edit-overlay' style="display: none;"></div>
+        <section class='flex-column justify-content-between edit-dropdown p-3 w-25' style="display: none;">
+            <div class="d-flex flex-column">
+                <div class='d-flex flex-column w-80 py-3'>
+                    <label for="userName">Gebruikersnaam:</label>
+                    <input type='text' id='userName' name="userName" value='{{ user.username }}' class='w-100'/>
+                </div>
+                <div class='d-flex flex-column w-80 py-3'>
+                    <label for="profileName">Naam:</label>
+                    <input type='text' id='profileName' name="profileName" data-id="{{ user.profile.id }}" value='{{ user.profile.name }}' class='w-100'/>
+                </div>
+                <div class='d-flex flex-column w-80 py-3'>
+                    <label for="department">
+                        Verander hoofdafdeling:
+                    </label>
+                    <select id="department" name="department" data-profile-id="{{ profile.id }}" class="w-100 p-1 rounded">
+                        {% for department in settings.departments|sort %}
+                            <option value="{{ department }}" {{ profile.department == department ? 'selected' : '' }}>{{ department }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class='d-flex flex-column action-bar'>
+                <div class="d-flex flex-row justify-content-between">
+                    <form action="{{ path('user_password_reset', {'id': profile.user.id}) }}" method="post">
+                        <button type="submit" class="btn w-5 btn-danger">Reset Wachtwoord</button>
+                    </form>
+                    {% set check = false %}
+                    {% if is_granted('ROLE_ADMIN') and 'ROLE_ADMIN' not in user.roles %}
+                        {% set check = true %}
+                        <form action="{{ path('profile_delete', {'id': profile.user.id}) }}" method="post" onsubmit="return confirm('Weet je zeker dat je deze persoon wilt verwijderen? Dit verwijderd alle gegevens van deze persoon');">
+                            <button type="submit" class="btn w-20 btn-danger">
+                                <i class="bi bi-trash-fill">Verwijder persoon</i>
+                            </button>
+                        </form>
+                    {% endif %}
+                    {% if is_granted('ROLE_SUPERADMIN') and 'ROLE_SUPERADMIN' not in user.roles and check == false %}
+                        <form action="{{ path('profile_delete', {'id': profile.user.id}) }}" method="post" onsubmit="return confirm('Weet je zeker dat je deze persoon wilt verwijderen? Dit verwijderd alle gegevens van deze persoon');">
+                            <button type="submit" class="btn w-48 btn-danger">
+                                <i class="bi bi-trash-fill">Verwijder persoon</i>
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+                <button class="edit-close-button btn w-50 bg-color-sky-blue mt-3 mx-auto">Opslaan</button>
+            </div>
+        </section>
+
+        <div class="profile-container d-flex align-items-center mb-3 p-3">
+             <section class="profile-details">
+                <button class="edit-profile">
+                    <i class="bi bi-pencil-fill"></i>
+                </button>
+                <div class="d-flex flex-row justify-content-between align-items-center">
+                    <div>
+                        <p><strong>Gebruikersnaam:</strong></p>
+                        <p id='shownUserName'>{{ profile.user.username }}</p>
+                        <p><strong>Medewerker:</strong></p>
+                        <p id='shownProfileName'>{{ profile.name }}</p>
+                        <p><strong>Afdeling:</strong></p>
+                        <p id="shownDepartment">{{ profile.department }}</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        {% set days = {'monday': 'Maandag', 'tuesday': 'Dinsdag', 'wednesday': 'Woensdag', 'thursday': 'Donderdag', 'friday': 'Vrijdag'} %}
+        <section class="profile-schedule">
+            <h2 class="RoosterTitle">Rooster</h2>
+            <div class="week-navigation">
+                <a href="{{ path('profile_view', {'id': user.id}) }}">
+                    <button class='btn' id='huidigeWeekBtn'>Naar huidige week</button>
+                </a>
+                <div class="w-25 border border-2 m-auto d-flex flex-row justify-content-between rounded weekSelector bg-blue">
+                    <button type="button" id="prev-week" class="border border-0">
+                        <i class="bi bi-arrow-left-short"></i>
+                    </button>
+                    <span id="week-label">Week
+                        {{ weekNumber }}
+                        van
+                        {{ year }}</span>
+                    <button type="button" id="next-week" class="border border-0">
+                        <i class="bi bi-arrow-right-short"></i>
+                    </button>
+                </div>
+                <div class="legenda">
+                    <span class="legenda-name btn">Legenda</span>
+                    <div class='legenda-overlay'></div>
+                    <div class="legenda-dropdown">
+                        {% for type, color in settings.colors %}
+                            {% if type == "Geen registratie" or type == 'Te laat' or type == 'Eerder weg' %}
+                                {% else %}
+                                    <p id="{{ type }}" class='colored' data-color='{{ color }}' style="background-color:{{ color }}">{{ type }}</p>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {{ render(controller(
+                'App\\Controller\\ProfileController::loadRooster', {weekNumber: weekNumber, year: year, id:profile.id }
+            )) }}
+        </section>
+    </main>
+    <script src="{{ asset('js/textColoring.js')}}"></script>
+    <script src="{{ asset('js/profile/profileLegenda.js')}}"></script>
+    <script src="{{ asset('js/profile/profileEdit.js')}}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let currentWeek = {{ weekNumber }};
+            let currentYear = {{ year }};
+            const userId = {{ profile.user.id }};
+            
+            if (currentWeek == "33" && currentYear == "2024") {
+                document.getElementById('prev-week').setAttribute('disabled', true);
+            }
+            
+            function updateSchedule(week, year) {
+                window.location.href = `{{ path('profile_view_other_week', {'id': 'USER_ID', 'year': 'YEAR', 'weekNumber': 'WEEK'}) }}`.replace('USER_ID', userId).replace('YEAR', year).replace('WEEK', week);
+            }
+            
+            function has53weeks(year) {
+                const first_day = new Date(year, 0, 1);
+                const first_day_number = first_day.getDay();
+                console.log(first_day);
+                console.log(first_day_number);
+                if (year % 4 == 0) {
+                    return false
+                } else if (first_day_number == 4) {
+                    return true
+                } else {
+                    return false
+                }               
+            }
+            
+            document.getElementById('prev-week').addEventListener('click', function () {
+                document.getElementById('prev-week').setAttribute('disabled', true);
+                currentWeek = {{ weekNumber }};
+                currentYear = {{ year }};
+                if (currentWeek > 1) {
+                    currentWeek--;
+                } else {
+                    currentYear--;
+                    if (has53weeks(currentYear)) {
+                        currentWeek = 53;
+                    } else {
+                        currentWeek = 52;
+                    }
+                } 
+                updateSchedule(currentWeek, currentYear);
+            });
+            
+            document.getElementById('next-week').addEventListener('click', function () {
+                document.getElementById('next-week').setAttribute('disabled', true);
+                currentWeek = {{ weekNumber }};
+                currentYear = {{ year }};
+                if (has53weeks(currentYear)){
+                    if (currentWeek < 53) {
+                        currentWeek++;
+                    } else {
+                        currentWeek = 1;
+                        currentYear++;
+                    } 
+                } else {
+                    if (currentWeek < 52) {
+                        currentWeek++;
+                    } else {
+                        currentWeek = 1;
+                        currentYear++;
+                    } 
+                }
+                updateSchedule(currentWeek, currentYear);
+            });
+
+            document.getElementById('department').addEventListener('change', function (input) {
+                const profileId = this.getAttribute('data-profile-id')
+                const department = this.value;
+                const payload = {
+                    profileId: profileId,
+                    department: department
+                };
+
+                fetch('{{ path("profile_edit_department", {"id": profile.id}) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token('attendance') }}'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('shownDepartment').innerHTML = department
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+
+            document.getElementById("profileName").addEventListener('blur', function(){
+                let value = document.getElementById("profileName").value;
+                const profileId = this.getAttribute('data-id')
+
+                const payload = {
+                    value: value,
+                };
+                fetch('{{ path("edit_profile_name", {"id": profile.id}) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token("profile_name") }}'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => response.json())
+                .then(data=> {
+                    document.getElementById('shownProfileName').innerHTML = value
+                    document.getElementById('headerName').innerHTML = value
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+
+            document.getElementById("userName").addEventListener('blur', function(){
+                let value = document.getElementById("userName").value;
+                let valueLower = value.toLowerCase();
+                const profileId = this.getAttribute('data-id')
+
+                const payload = {
+                    value: valueLower,
+                };
+                fetch('{{ path("edit_user_name", {"id": profile.id}) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token("user_name") }}'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => response.json())
+                .then(data=> {
+                    document.getElementById('shownUserName').innerHTML = valueLower
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+
+            // Add event listener to the edit button to show the popup
+            document.querySelector('.edit-profile').addEventListener('click', function () {
+                document.querySelector('.edit-overlay').style.display = 'block';
+                document.querySelector('.edit-dropdown').style.display = 'flex';
+            });
+
+            // Add event listener to the close button to hide the popup
+            document.querySelector('.edit-close-button').addEventListener('click', function () {
+                document.querySelector('.edit-overlay').style.display = 'none';
+                document.querySelector('.edit-dropdown').style.display = 'none';
+            });
+
+            // Add event listener to the overlay to hide the popup when clicked
+            document.querySelector('.edit-overlay').addEventListener('click', function () {
+                document.querySelector('.edit-overlay').style.display = 'none';
+                document.querySelector('.edit-dropdown').style.display = 'none';
+            });
+        });
+    </script>
+{% endblock %}

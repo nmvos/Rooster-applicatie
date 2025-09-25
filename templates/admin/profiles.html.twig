@@ -1,0 +1,111 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Profielen{% endblock %}
+
+{% block head %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('styles/admin_profiles.css') }}" />
+{% endblock %}
+
+
+
+{% block body %}
+<div class='edit-overlay' style="display:none;"></div>
+<section class="p-3 main-content">
+    {% block headertitle %}
+<h2 class="m-0 fs-2 mt-3 text-start custom_h2">Profielen</h2>
+    {% endblock %} 
+    <!-- Zoekbalk en knop container -->
+  <div class="d-flex justify-content-between align-items-center mb-3 header-actions">
+    <!-- Zoekbalk -->
+    <div class="relative search-container">
+      <input type="text" id="searchInput" placeholder="Zoeken medewerker..." class="search-input">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.442 1.398a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+      </svg>
+    </div>
+    
+    <a href="create_employee">
+      <button class="btn add-button">Voeg medewerker toe</button>
+    </a>
+  </div>
+  
+  <!-- Tabel -->
+  <table class="profile-table">
+      <thead>
+          <tr>
+              <th id="sortNames">Naam  &#9662;</th>
+              <th id="sortDepartment">Afdeling &#9662;</th>
+              <th>Locatie</th>
+              <th class="actions-header"></th> <!-- Lege kolom voor uitlijning -->
+          </tr>
+      </thead>
+      <tbody id="profileTableBody">
+          {% for profile in profiles %}
+              <tr class="profile-item" data-medewerker="{{ profile.name }}">
+                  <td class="profile-info">
+                      <i class="bi bi-person-circle profile-icon"></i>
+                      <a href="{{ path('profile_view', {'id': profile.user.id}) }}">{{ profile.name }}</a>
+                  </td>
+                  <td>{{ profile.department }}</td>
+                  <td>{{ profile.user.location }}</td>
+                  <td class="actions">
+                      <button class="icon-btn edit-btn" data-user-id="{{ profile.user.id }}" data-user-name="{{ profile.user.username }}" data-profile-name="{{ profile.name }}" data-department="{{ profile.department }}"><i class="bi bi-pencil-square"></i></button>
+                      <form action="{{ path('profile_delete', {'id': profile.user.id}) }}" method="post" onsubmit="return confirm('Weet je zeker dat je deze persoon wilt verwijderen? Dit verwijderd alle gegevens van deze persoon');">
+                          <button type="submit" class="icon-btn delete-btn"><i class="bi bi-trash-fill"></i></button>
+                      </form>
+                  </td>
+              </tr>
+          {% endfor %}
+      </tbody>
+  </table>
+
+  <!-- De pop-up overlay en formulier (in eerste instantie verborgen) -->
+  <section class='flex-column justify-content-between edit-dropdown p-3 w-25' style="display:none;">
+      <form id="editForm" action="/profile/update" method="post" class="d-flex flex-column">
+          <input type="hidden" id="userId" name="userId" value="" />
+          <div class='d-flex flex-column w-80 py-3'>
+              <label for="userName">Gebruikersnaam:</label>
+              <input type='text' id='userName' name="userName" value='' class='w-100'/>
+          </div>
+          <div class='d-flex flex-column w-80 py-3'>
+              <label for="profileName">Naam:</label>
+              <input type='text' id='profileName' name="profileName" value='' class='w-100'/>
+          </div>
+          <div class='d-flex flex-column w-80 py-3'>
+              <label for="department">
+                  Verander hoofdafdeling:
+              </label>
+              <select id="department" name="department" class="w-100 p-1 rounded">
+                  <option value="3e leerweg">3e leerweg</option>
+                  <option value="Algemeen">Algemeen</option>
+                  <option value="Directie">Directie</option>
+                  <option value="Meedraaien">Meedraaien</option>
+                  <option value="Project">Project</option>
+                  <option value="SoftPool">SoftPool</option>
+                  <option value="Wipe">Wipe</option>
+              </select>
+          </div>
+          <!-- Knoppen naast elkaar -->
+          <div class="d-flex flex-row justify-content-between gap-2 mt-3">
+              <button type="submit" class="btn bg-color-sky-blue flex-fill">Opslaan</button>
+              <form id="resetPasswordForm" action="/profile/reset-password" method="post" class="m-0 p-0">
+                  <button type="submit" class="btn btn-danger flex-fill">Reset Wachtwoord</button>
+              </form>
+              <form id="deleteForm" action="/profile/delete" method="post" class="m-0 p-0" onsubmit="return confirm('Weet je zeker dat je deze persoon wilt verwijderen? Dit verwijderd alle gegevens van deze persoon');">
+                  <button type="submit" class="btn btn-danger flex-fill">
+                      <i class="bi bi-trash-fill"></i> Verwijder persoon
+                  </button>
+              </form>
+              <button type="button" class="btn edit-close-button btn-secondary flex-fill">Annuleren</button>
+          </div>
+      </form>
+  </section>
+</section>
+
+<script src="{{ asset('js/profiles/Searchfunction.js')}}"></script>
+<script src="{{ asset('js/profiles/sortDepartment.js')}}"></script>
+<script src="{{ asset('js/profiles/sortNames.js')}}"></script>
+<script src="{{ asset('js/profile/profileEdit.js')}}"></script>
+
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends 'base.html.twig' %} 
+
+{% block title %}Projecten{% endblock %}
+
+{% block head %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('styles/admin_projects.css') }}" />
+{% endblock %}
+  
+{% block body %}
+    <section class="p-3 main-content">
+            {% block headertitle %}
+                <h2 class="m-0 fs-2 mt-3 text-start custom_h2">Projecten</h2>
+            {% endblock %}
+        {# Hier wordt de form aangemaakt die in de project aanmaken pop-up komen #}
+            <div class='create-overlay'></div>
+            <div class="create-dropdown p-3">
+                {{ form_start(projectForm) }}
+                <p>{{ form_row(projectForm.name) }}</p>
+                <p>{{ form_row(projectForm.startWeek) }}</p>
+                <p><button type="submit" class="btn bg-color-sky-blue">Maak project aan</button></p>
+                {{ form_end(projectForm) }}
+            </div>
+
+        {# Hier wordt de popup voor het afsluiten van het project aangemaakt #}
+        <section class="finish_project mt-3 ">
+            <div class='finish-overlay'></div>
+            <div class="finish-dropdown">
+                <p class='m-1 d-flex justify-content-between'>Projectnaam: <span id= 'finishName'></span></p>
+                <p class='m-1 d-flex justify-content-between' >Jaar gestart: <span id = 'startYear'></span></p>
+                <p class='m-1 d-flex justify-content-between' >Week gestart: <span id = 'startWeek'></span></p>
+                <p class='m-1' >Week geëindigd: <span id = 'endWeek'></span></p>
+                <button class="btn bg-color-sky-blue w-100" id='finishProjectBtn'>Beëindig Project</button>
+                <p id ="message"></p>
+            </div>
+        </section>
+
+        {# Voeg een wrapper toe voor de twee tabellen #}
+        <div class="projects-flex-wrapper d-flex gap-3">
+            {# Actieve projecten #}
+            <section id="show_projects" class="p-3 flex-fill" style="min-width: 0; max-width: 48%;">
+                <div class='d-flex justify-content-between'>
+                    <h2 class=''>Actieve Projecten </h2>
+                    <div class="create_project">
+                        <span class="btn bg-color-sky-blue btn-sm">  
+                            <i class="bi bi-plus-lg"></i>
+                        </span>
+                    </div>
+                </div>
+                <table class="w-100 mt-2" id="active_table">
+                    <thead >
+                        <th>Naam</th>
+                        <th>Start jaar</th>
+                        <th>Start week</th>
+                        <th class="th-afronden">Afronden</th>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                            {% if project.active %}
+                                <tr id="{{project.id}}" data-index-row-active="{{project.id}}" class = '{{project.name}} border border-2 border-end-0 border-start-0 border-bottom-0'>
+                                    <td>{{project.name}}</td>
+                                    <td>{{project.startYear}}</td>
+                                    <td>{{project.startWeek}}</td>
+                                    <td class="afronden-col">
+                                        <button 
+                                            class="finishProject btn bg-color-sky-blue m-1 p-1"
+                                            data-id="{{project.id}}" 
+                                            data-name="{{project.name}}"
+                                            data-sYear="{{project.startYear}}"
+                                            data-sWeek="{{project.startWeek}}"
+                                            >
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+
+            {# Afgeronde projecten #}
+            <section id="show_finished_projects" class="p-3 flex-fill" style="min-width: 0; max-width: 48%; padding-top: 20px;">
+                <h2>Afgeronde Projecten</h2>
+                <table class="w-100 mt-20" id='finished_table'>
+                    <thead >
+                        <th>Naam</th>
+                        <th>Start jaar</th>
+                        <th>Start week</th>
+                        <th>Eind jaar</th>
+                        <th>Eind week</th>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                            {% if not project.active %}
+                                <tr class = '{{project.name}} border border-2 border-end-0 border-start-0 border-bottom-0'>
+                                    <td>{{project.name}}</td>
+                                    <td>{{project.startYear}}</td>
+                                    <td>{{project.startWeek}}</td>
+                                    <td>{{project.endYear}}</td>
+                                    <td>{{project.endWeek}}</td>                                  
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        </div>
+
+    </section>
+
+    <script>path = '{{ path("finish_project")}}'</script>
+    <script src="{{ asset('js/projects/createProject.js')}}"></script>
+    <script src="{{ asset('js/projects/finishProject.js')}}"></script>
+    <style>
+        .projects-flex-wrapper {
+            display: flex;
+            gap: 2rem;
+            justify-content: space-between;
+        }
+        .projects-flex-wrapper section {
+            flex: 1 1 0;
+            max-width: 48%;
+            min-width: 300px;
+        }
+        @media (max-width: 900px) {
+            .projects-flex-wrapper {
+                flex-direction: column;
+            }
+            .projects-flex-wrapper section {
+                max-width: 100%;
+            }
+        }
+    </style>
+{% endblock %}

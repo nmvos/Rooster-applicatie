@@ -1,0 +1,95 @@
+{% block head %}
+    <link rel="stylesheet" href="{{ asset('styles/changelog.css') }}">
+{% endblock %}
+
+{% block body %}
+    <div class='changelogOverlay'></div>
+    <div class='changelog'>
+        {# edit here the version nummer to the correct number #}
+        <span class="text-light">v.5.1.0 <i class="bi bi-info-circle"></i></span>
+        <div class = 'changelogDropdown'>
+            <h2 class="text-dark">Changelog</h2>
+            {# add updates here to the changelog #}
+            <p>v.5.1.0: Dataloss van januari en februari bug opgelost</p> 
+            <p>v.5.0.4: Alles is nu gesorteerd op de instellingen pagina</p> 
+            <p>v.5.0.3: Jaar rapportage pie bug opgelost</p> 
+            <p>v.5.0.2: Op rooster inplannen pagina worden nu bij "ingeroosterd per afdleing" de eerste 3 letters weergegeven van de afdelingen </p> 
+            <p>v.5.0.1: Functie toegevoegd waarmee je alle notificaties in 1 keer kunt weghalen</p> 
+            <p>v.5.0.0: Concept rooster kan niet meer huidige rooster overschrijden</p> 
+            <p>v.4.3.0: Achtergrond foto en logo worden nu direct bijgewerkt</p> 
+            <p>v.4.2.1: Afdelingen waar geen medewerkers in staan worden niet meer weergegeven op de rooster inplannen pagina</p> 
+            <p>v.4.2.1: Sidebar is nu standaard open bij je eerste bezoek</p> 
+            <p>v.4.2.0: Icoontjes op de rapportage pagina's veranderd naar checkmarks en questionmarks </p> 
+            <p>v.4.1.2: Profiel pagina styling aangepast</p> 
+            <p>v.4.1.1: De optie "Onverwacht" veranderd naar "Niet verwacht"</p> 
+            <p>v.4.1.0: Zoekfunctie bijgewerkt op alle pagina's</p> 
+            <p>v.4.0.3: Medewerker aanmaken styling aangepast</p> 
+            <p>v.4.0.2: Aanwezigheidsregistratie pagina styling aangepast</p> 
+            <p>v.4.0.1: Rapportage pagina's styling aangepast</p>  
+            <p>v.4.0.0: Instellingen pagina styling aangepast</p>  
+            <p>v.3.9.5: Meerdere bugs opgelost.</p>  
+            <p>v.3.9.4: Sorteer functie toegevoegd aan Rooster inplannen pagina.</p>  
+            <p>v.3.9.3: Logo toegevoegd aan de navbar.</p>  
+            <p>v.3.9.2: Styling van de sidebar aangepast.</p> 
+            <p>v.3.9.1: Styling Alle profielen pagina aangepast.</p> 
+            <p>v.3.9.0: Styling Rapportage pagina aangepast.</p> 
+            <p>v.3.8.3: CSS aanpassingen.</p>
+            <p>v.3.8.2: Dashboard styling aangepast.</p>
+            <p>v.3.8.1: Oude dashboard teruggehaald.</p>
+            <p>v.3.8.0: Als admin kan je niet meer in de conceptRooster .</p>         
+            <p>v.3.7.5: Volgorde van de sidebar veranderd.</p>
+            <p>v.3.7.4: De styling van elke pagina aangepast.</p>                
+            <p>v.3.7.3: CSS aanpassingen.</p>
+            <p>v.3.7.2: Titel aangepast op de instellingen pagina.</p>
+            <p>v.3.7.1: Titel aangepast op de rooster inplan pagina.</p>   
+            <p>v.3.7.0: Download pdf en publiceer zijn veranderd</p>    
+            <p>v.3.6.8: Sidebar button bijgewerkt.</p>
+            <p>v.3.6.7: Styling voor knoppen en secties.</p>   
+            <p>v.3.6.6: Knoppenbreedtes aangepast in profielen.</p>
+            <p>v.3.6.5: Instellingen CSS-klasse in reset_password aangepast</p>                      
+            <p>v.3.6.4: Styling aanpassingen aan reset-password pagina.</p>
+            <p>v.3.6.3: Talen lopen niet meer door elkaar heen</p>
+            <p>v.3.6.2: Waardes worden aangepast als hoofdafdeling wordt aangepast.</p>    	    
+            <p>v.3.6.1: Jaarrapportage jaar selector bug fixes.</p>
+            <p>v.3.6.0: Lijsten zijn op alfabetische volgorde.</p>           
+            <p>v.3.5.0: Rapportage filter meerdere selectie personen.</p>
+            <p>v.3.4.0: Bij aanmaken meeloper gelijk mogelijkheid tot inplannen.</p>
+            <p>v.3.3.0: Eerder weg willen als registratie.</p>
+            <p>v.3.2.0: Rapportage zoektermen meenemen van switchen naar pagina.</p>
+            <p>v.3.1.0: Pagina pdf klikbare naam rooster inplannen pagina highlighted.</p>
+            <p>v.3.0.0: CSS update</p>
+            <p>v.2.1.0: Rooster inplannen geupdate naar het zelfde systeem als concept roosters</p>
+            <p>v.2.0.0: Concept roosters toegevoegd, deze kunnnen geladen worden in rooster inplannen</p>
+            <p>v.1.5.5: Toegevoegd dagselectie op aanwezigheidsregistratie weekoverzicht.</p>
+            <p>v.1.5.4: Toegevoegd weekoverzicht in Rapportage.</p>
+            <p>v.1.5.3: Rapportage hover geeft rij weer.</p>
+            <p>v.1.5.2: Iconen toegevoegd aan de sidebar.</p>
+            <p>v.1.5.1: Inlog pad van admin veranderd naar aanwezigheidsregistratie.</p>
+            <p>v.1.5.0: Meelopers kunnen nu een tijdelijk account krijgen, die na een bepaalde tijd vanzelf verwijderd wordt.</p>
+            <p>v.1.4.0: Jaarrapportage toegevoegd.</p>
+            <p>v.1.3.0: Notificatie stysteem toegevoegd waarin je notificaties krijgt over nieuw pdf rooster en vergeten van aanwezigheidsregistratie.</p>
+            <p>v.1.2.5: Login limit toegevoegd.</p>
+            <p>v.1.2.4: In rapportage alle pie-charts verdwijnen als er geen informatie is.</p>
+            <p>v.1.2.4: Hoofdletters voor alle namen in het pdf rooster bestand.</p>
+            <p>v.1.2.3: Links in de rapportage pagina naar het profiel van de gebruiker.</p>
+            <p>v.1.2.2: Superadmin kan nu zien of de roosters zijn gepubliceerd.</p>
+            <p>v.1.2.1: Door open staande sidebar geen springen meer op de rest van de pagina.</p>
+            <p>v.1.2.0: Telefoon gebruik verbeterd.</p>
+            <p>v.1.1.10: Sidebar blijft open wanneer opengezet, en op desktop kleur op aanwezigheidsregistratie is nu een blok.</p>
+            <p>v.1.1.9: Fix wanneer volgende week wordt geopent en er nog geen rooster is wordt deze gekopierd van de huidige week.</p>
+            <p>v.1.1.8: Toegevoegd knop Aanwezigheidsregistratie om ingeplande mensen met een waarde te laten zien.</p>
+            <p>v.1.1.7: Toegevoegd profile dropdown aan de header.</p>
+            <p>v.1.1.6: Toegevoegd alle profielen pagina.</p>
+            <p>v.1.1.5: Laat geen mensen meer zien die een waarde hebben na 12.30 in aanwezigheidsregistratie.</p>
+            <p>v.1.1.4: Toegevoegd huidinge status kleuren toegevoegd aanwezigheidsregistratie.</p>
+            <p>v.1.1.3: Verwijderd popup afsluit knoppen, kan nu gesloten worden door naast de popup te klikken.</p>
+            <p>v.1.1.2: Toegevoegd dynamisch kleuren bij achtergrondkleur.</p>
+            <p>v.1.1.1: Toegevoegd changelog.</p>
+            <p>v.1.1.0: CSS Update.</p>
+            <p>v.1.0.0: Initial Release.</p>
+        </div>
+    </div>
+
+
+    <script src="{{ asset('js/changelog.js')}}"></script>
+{% endblock %}

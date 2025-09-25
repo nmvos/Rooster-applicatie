@@ -1,0 +1,442 @@
+{% extends 'base.html.twig' %}
+{% block title %} Concept rooster {% endblock %}
+{% block head %}
+	{{ parent() }}
+	<link rel="stylesheet" href="{{ asset('styles/admin_concept_rooster.css') }}"/>
+{% endblock %}
+
+
+{% block body %}
+
+    {# load of multiple variables #}
+    {% set days = {'monday': 'Maandag', 'tuesday': 'Dinsdag', 'wednesday': 'Woensdag', 'thursday': 'Donderdag', 'friday': 'Vrijdag'} %}
+    {% set timeSlots = {'morning': 'Ochtend', 'afternoon': 'Middag', 'whole_day': 'Hele dag' ,'different_timing': 'Afwijkende tijden'} %}
+    {% set types = {'basic': 'Basis', 'even': 'Even', 'odd': 'Oneven'} %}
+    {% set departments = settings.departments %}
+
+        {# different timimg popup #}
+        <div class='popup-overlay'></div>
+        <section class='edit-different_timing-popup'>
+            <div id="" class="w-100 different_timing_inputs">
+                <div class="input-group p-0 ">
+                    <span class="input-group-text w-50 fs-7 ">Begin tijd:</span>
+                    <input 
+                        type="time"
+                        class="form-control my-0 fs-7 w-50 py-3 form-check-input"
+                        id='beginTijd'
+                        aria-label="begin tijd">
+                </div>
+                <div class="input-group p-0">
+                    <span class="input-group-text w-50 fs-7">Eind tijd:</span>
+                    <input 
+                        type="time"
+                        class="form-control my-0 fs-7 py-3 w-50 form-check-input"
+                        id ='eindTijd'
+                        aria-label="eind tijd">
+                </div>
+            </div>
+        </section>
+        {# different timimg popup end #}
+
+        {# main content zie class #}
+        <section class="p-3 main-content">
+        {# plaats header block #}
+            {% block headertitle %}
+                <h2 class="m-0 fs-2 mt-3 text-start custom_h2">Concept rooster</h2>
+            {% endblock %}
+            {# plaats header block EINDE #}
+            <section class='Concept_selector p-2'>
+                <select name="" id="type-selector" class = 'form-select w-15'>
+                    {% for types_en, types_nl in types %}
+                        <option value="{{types_en}}">{{types_nl}}</option>
+                    {% endfor %}
+                </select>
+                    <!-- Checkbox to toggle schedule visibility -->
+                <label>
+                    <input type="checkbox" id="toggle-schedule-checkbox">
+                    Laat ingeroosterd per afdeling zien
+                </label>
+                <!-- Div to display schedule, hidden by default -->
+
+            </section>
+            <div id="schedule-summary" style="display: none; margin-top: 10px;">
+                <!-- Placeholder for dynamically added content -->
+                
+                <section class="d-flex flex-row justify-content-between" id="schedule-summary-list"></section>
+            </div>
+            {% for type_en, type_nl in types %}
+                <section class = "Concept_roosters" id="{{type_en}}-section" 
+                    {% if type_en == 'odd' %} style = "display:none;" {% endif %}
+                    {% if type_en == 'even' %} style = "display:none;" {% endif %}>
+                    <h3 class="p-2">{{type_nl}}</h3>
+                    <table class="table table-hover">
+                        <thead class="thead-dark ">
+                            <tr class="bg-light-subtle">
+                                <th class="bg-light sticky-2">Medewerker</th>
+                                <th>Maandag</th>
+                                <th>Dinsdag</th>
+                                <th>Woensdag</th>
+                                <th>Donderdag</th>
+                                <th>Vrijdag</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for conceptRooster in conceptRoosters %}
+                                <tr class='userRow basic border-end-1' data-medewerker="{{conceptRooster.user.profile.name}}" data-department="{{conceptRooster.user.profile.department}}">
+                                    <td class="py-2 sticky">
+                                        <a href="{{ path('profile_view', {'id': conceptRooster.user.id}) }}" class="link-dark link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
+                                            {{ conceptRooster.user.profile.name }}
+                                        </a>
+                                    </td>
+                                    {% for day, dutchDay in days %}
+                                        <td >
+                                            <div class="d-flex">
+                                                <select name="{{day}}-department-select" id="{{day}}-{{conceptRooster.user.id}}-department-selector"
+                                                    class= 'departmentSelector colored selector-{{type_en}}'
+                                                    data-medewerker="{{conceptRooster.user.id}}"
+                                                    data-day="{{day}}"
+                                                    data-type = "{{type_en}}"
+                                                    >
+                                                    {% set selected_department = attribute(conceptRooster, type_en).schedule[day].department | lower %}
+                                                    {% for department in departments | sort %}
+                                                        {% set department_lower = department | lower %}
+                                                        <option data-color="{{settings.departmentColor[department]}}" style="background-color: {{settings.departmentColor[department]}}" value="{{ department }}" {% if department_lower==selected_department %} selected {% endif %}  >
+                                                            {{ department }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <select name="{{day}}-select" id="{{type_en}}-{{day}}-{{conceptRooster.user.id}}-state-selector"
+                                                    class = "state-selector"
+                                                    data-medewerker="{{conceptRooster.user.id}}"
+                                                    data-day="{{day}}"
+                                                    data-type = "{{type_en}}">
+                                                    {% set schedule = attribute(conceptRooster, type_en).schedule[day] %}
+                                                    {% set selected_option = 
+                                                        schedule["different_timing"]["scheduled"] ? "different_timing" :
+                                                        (schedule["morning"]["scheduled"] and schedule["afternoon"]["scheduled"]) ? "whole_day" :
+                                                        schedule["afternoon"]["scheduled"] ? "afternoon" :
+                                                        schedule["morning"]["scheduled"] ? "morning" : "none" %}
+
+                                                        <option value="none" {% if selected_option == "none" %}selected{% endif %}>-</option>
+                                                        <option value="morning" {% if selected_option == "morning" %}selected{% endif %}>Ochtend</option>
+                                                        <option value="afternoon" {% if selected_option == "afternoon" %}selected{% endif %}>Middag</option>
+                                                        <option value="whole_day" {% if selected_option == "whole_day" %}selected{% endif %}>Hele dag</option>
+                                                        <option value="different_timing" {% if selected_option == "different_timing" %}selected{% endif %}>Afwijkende tijden</option>
+
+                                                    {% if selected_option == "different_timing" %}
+                                                        <option value="{{ schedule['different_timing']['scheduled'] }}" selected disabled>
+                                                            {{ schedule['different_timing']['scheduled'] }}
+                                                        </option>
+                                                    {% endif %}
+                                                </select>
+                                            </div>
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </section>
+            
+            {% endfor %}
+         <section>
+        <script>
+            const timingPath = '{{ path("concept_update_timing")}}';
+        </script>
+        <script src="{{ asset('js/textColoring.js')}}"></script>
+        <script>
+            const departmentColors = {{ settings.departmentColor|json_encode|raw }};
+
+            const toggleCheckbox = document.getElementById('toggle-schedule-checkbox');
+            const scheduleSummaryDiv = document.getElementById('schedule-summary');
+            const scheduleSummaryList = document.getElementById('schedule-summary-list');
+            const allDepartments =  {{ settings.departments|json_encode|raw }};
+            const sortedDepartments = allDepartments.sort()
+            const percentageSize = 100 / allDepartments.length
+
+            function updateScheduleSummary() {
+                const departmentCounts = {"monday":{}, "tuesday":{}, "wednesday":{}, "thursday":{}, "friday": {}};
+                for (day in departmentCounts){
+                    for (i in sortedDepartments){
+                        departmentCounts[day][sortedDepartments[i]] = [0,0]
+                    }
+                }
+                let selectedType = document.querySelector("#type-selector").value
+                document.querySelectorAll(`.selector-${selectedType}`).forEach(function(selector){
+                    const day = selector.getAttribute('data-day')
+                    const department = selector.value
+                    const id = selector.getAttribute("data-medewerker");
+                    const linkedState = document.querySelector(`#${selectedType}-${day}-${id}-state-selector`)
+                    if (linkedState.value !== "none"){
+                        // Increment count for the selected department
+                        if (department) {
+                            if (linkedState.value === "afternoon"){
+                                departmentCounts[day][department][1] += 1;
+                            } else if (linkedState.value === 'morning'){
+                                departmentCounts[day][department][0] += 1;
+                            } else if (linkedState.value === 'whole_day'){
+                                departmentCounts[day][department][0] += 1;
+                                departmentCounts[day][department][1] += 1;
+                            } else if (linkedState.value.includes("-")) { // Check if it's a time range
+                                const [start, end] = linkedState.value.split(" - ").map(time => {
+                                    const [hours, minutes] = time.split(":").map(Number);
+                                    return hours * 60 + minutes; // Convert time to minutes for easy comparison
+                                });
+
+                                if (start < 750) { // 12:30 PM in minutes
+                                    departmentCounts[day][department][0] += 1; // Increment morning count
+                                }
+                                if (end > 780) { // 13:00 PM in minutes
+                                    departmentCounts[day][department][1] += 1; // Increment afternoon count
+                                }
+                            }
+                        }
+                    }  
+                })
+                scheduleSummaryList.innerHTML = '';
+                for (const day in departmentCounts) {
+                    switch(day){
+                        case "monday":
+                            dayNL = "Maandag";
+                            break;
+                        case "tuesday":
+                            dayNL = "Dinsdag";
+                            break;
+                        case "wednesday":
+                            dayNL = "Woensdag";
+                            break;
+                        case "thursday":
+                            dayNL = "Donderdag";
+                            break;
+                        case "friday":
+                            dayNL = "Vrijdag";
+                            break;
+                        default:
+                            dayNL = "er gaat iets fout" ;
+                    }
+                    const dayItem = document.createElement('article');
+                    if(departmentCounts[day] && Object.keys(departmentCounts[day]).length === 0){
+                        dayItem.classList.add("d-none");
+                    }
+                    dayItem.classList.add("p-2")
+                    dayItem.classList.add("w-100")
+                    dayItem.innerHTML = `<h5 class="m-0 px-1 d-flex flex-row justify-content-between" style="width:100%; background-color:#9f9f9f; color:white;"><span>${dayNL}</span><span>Ochtend</span><span>Middag</span></h5>`;
+
+                    const departmentList = document.createElement('div');
+                    departmentList.classList.add("d-flex");
+                    departmentList.classList.add("flex-column");
+                    for (const department in departmentCounts[day]) {
+                        const departmentItem = document.createElement('div');
+                        departmentItem.classList.add("d-flex");
+                        departmentItem.classList.add("flex-column");
+                        departmentItem.classList.add("border");
+                        departmentItem.classList.add("border-dark");
+                        departmentItem.classList.add("border-top-1");
+                        departmentItem.classList.add("border-bottom-1");
+                        departmentItem.style.width ="100%"
+                        departmentItem.style.textAlign = "center";
+                        departmentItem.innerHTML = `<h6 class = 'colored m-0 p-1 d-flex flex-row justify-content-between' data-color = ${departmentColors[department]} style="background-color:${departmentColors[department]}"<span>${getShortDepartment(department)}</span><span class="d-flex justify-content-between w-40"><span>${departmentCounts[day][department][0]}</span><span>${departmentCounts[day][department][1]}</span></span</h6>`;
+                        itemToColor = departmentItem.querySelector("h6");
+                        checkColors(itemToColor)
+                        //departmentItem.style.color = departmentColors[department] || 'black';
+                        departmentList.appendChild(departmentItem);
+
+                    }
+
+                    dayItem.appendChild(departmentList);
+                    scheduleSummaryList.appendChild(dayItem);
+                }
+            }
+
+            // Toggle visibility of the schedule summary
+            toggleCheckbox.addEventListener('change', function () {
+                if (toggleCheckbox.checked) {
+                    scheduleSummaryDiv.style.display = 'block';
+                } else {
+                    scheduleSummaryDiv.style.display = 'none';
+                }
+            });
+            
+            document.addEventListener('DOMContentLoaded', function (){
+                const differentTimingOverlay = document.querySelector('.popup-overlay');
+                const differentTimingPopup = document.querySelector('.edit-different_timing-popup');
+                const beginTijd = document.querySelector('#beginTijd');
+                const eindTijd = document.querySelector('#eindTijd');
+                let popup_id;
+                let popup_type;
+                let popup_day;
+
+                function checkPopup(){
+                    if (beginTijd.value !== "" && eindTijd.length !== "" ){
+                        if(beginTijd.value < eindTijd.value){
+                            return true
+                        }
+                    }
+                    return false
+                }
+
+                function closePopup(){
+                    if (checkPopup())
+                    {
+                        differentTimingPopup.style.display = 'none';
+                        differentTimingOverlay.style.display = 'none';
+                        let popupTijd = `${beginTijd.value} - ${eindTijd.value}`;
+                        const payload = {
+                            userId: popup_id,
+                            day: popup_day,
+                            type: popup_type,
+                            value: popupTijd
+                        }
+                        fetch('{{ path("concept_update_different_timing") }}',  {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': "{{ csrf_token('concept_update_different_timing') }}"
+                            },
+                            body: JSON.stringify(payload)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            updateScheduleSummary();
+                            const selectElement = document.querySelector(`#${popup_type}-${popup_day}-${popup_id}-state-selector`);
+                            const newOption = document.createElement('option');
+                            newOption.value = "new";
+                            newOption.text = popupTijd;
+                            selectElement.appendChild(newOption);
+                            selectElement.value = "new";
+                            newOption.disabled = true;
+                            beginTijd.value = "";
+                            eindTijd.value = "";
+                            popup_id = '';
+                            popup_type = '';
+                            popup_day = '';
+                        })
+                        .catch(error => {
+                            console.error('Error:', error)
+                        })
+                    } else{
+                        beginTijd.style.borderColor = 'red';
+                        eindTijd.style.borderColor = 'red';
+                    }
+                }
+
+                function openPopup(){
+                    beginTijd.style.borderColor = '#dee2e6';
+                    eindTijd.style.borderColor = '#dee2e6';
+                    differentTimingPopup.style.display = 'block';
+                    differentTimingOverlay.style.display = 'block';
+                }
+
+                differentTimingOverlay.addEventListener('click', function (event){
+                    event.stopPropagation();
+                    closePopup();
+                })
+
+                updateScheduleSummary();
+                document.querySelector("#type-selector").addEventListener("change", function(){
+                    updateScheduleSummary()
+                    let selectedType = document.querySelector("#type-selector").value
+                    let selectedSection = document.querySelector(`#${selectedType}-section`)
+                    document.querySelector('#basic-section').style.display = 'none';
+                    document.querySelector('#odd-section').style.display = 'none';
+                    document.querySelector('#even-section').style.display = 'none';
+                    selectedSection.style.display = 'block';
+                })
+                document.querySelectorAll('.state-selector').forEach(function(state){
+                    state.addEventListener('change', function(){
+                        let stateId = state.getAttribute('data-medewerker');
+                        let stateDay = state.getAttribute('data-day');
+                        let stateType = state.getAttribute('data-type');
+                        let stateValue = state.value;
+                        if (stateValue == 'different_timing'){
+                            popup_id = stateId;
+                            popup_type = stateType;
+                            popup_day = stateDay;
+                            openPopup();
+                        }
+                        else if (stateValue == 'none' || stateValue == 'morning' || stateValue == 'afternoon' || stateValue == 'whole_day'){
+                            updateScheduleSummary();
+                            const payload = {
+                                userId: stateId,
+                                day: stateDay,
+                                type: stateType,
+                                value: stateValue
+                            };
+                            fetch('{{ path("concept_update_timing") }}',  {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': "{{ csrf_token('concept_update_timing') }}"
+                                },
+                                body: JSON.stringify(payload)
+                            })
+                            .then(response => response.json())
+                            .catch(error => {
+                                console.error('Error:', error)
+                            })
+                        }
+                    })
+                })
+                document.querySelectorAll('.departmentSelector').forEach(function(selector){
+                    let department = selector.value;
+                    selector.style.backgroundColor = departmentColors[department] || 'transparent';
+                    selector.setAttribute("data-color", departmentColors[department])
+                    checkColors(selector);
+                    Array.from(selector.options).forEach(function (option) {
+                        option.classList.add("colored");
+                        checkColors(option);
+                    });
+                    selector.addEventListener('change', function(){
+                        let departmentId = selector.getAttribute('data-medewerker');
+                        let departmentDay = selector.getAttribute('data-day');
+                        let departmentType = selector.getAttribute('data-type');
+                        let departmentNew = selector.value;
+                        selector.style.backgroundColor = departmentColors[departmentNew] || 'transparent';
+                        selector.setAttribute("data-color", departmentColors[departmentNew])
+                        updateScheduleSummary();
+                        checkColors(selector);
+                        const payload = {
+                            userId: departmentId,
+                            day: departmentDay,
+                            type: departmentType,
+                            value: departmentNew
+                        };
+                        fetch('{{ path("concept_update_department") }}',  {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': "{{ csrf_token('concept_update_department') }}"
+                            },
+                            body: JSON.stringify(payload)
+                        })
+                        .then(response => response.json())
+                        .catch(error => {
+                            console.error('Error:', error)
+                        })  
+                    })
+                })
+            })
+
+// functie getShortDepartment die ervoor zorgt dat de afdelingen korter worden weergegeven in de popup
+function getShortDepartment(department) {
+    switch (department) {
+		case 'Algemeen': return 'Alg';
+		case 'Refurbishment': return 'Ref';
+		case 'Beheer': return 'Beh';
+		case 'Magazijn': return 'Mgz';
+		case '3e leerweg': return 'Opl';
+		case 'Reparatie': return 'Rep';
+		case 'Pre-wipe': return 'Wpe';
+		case 'Sales': return 'Sal';
+		case 'Zaandam': return 'Znd';
+		case 'Ophaalservice': return 'Rit';
+		case 'Softpool': return 'Sof';
+		case 'Meedraaien': return 'Mdr';
+		case 'Project': return 'Prt';
+
+	    default: return department.slice(0, 3);
+    }
+}
+
+        </script>
+{% endblock %}

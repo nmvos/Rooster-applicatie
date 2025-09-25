@@ -1,0 +1,45 @@
+{% extends 'base.html.twig' %}
+{% block title %}Medewerker aanmaken
+{% endblock %}
+{% block head %}
+	{{ parent() }}
+	<link rel="stylesheet" href="{{ asset('styles/admin_create_employee.css') }}"/>
+{% endblock %}
+
+
+{% block body %}
+	<section class="mt-6 main-content">
+		{% block headertitle %}
+			<h2 class="m-0 fs-2 mt-3 text-black ms-3">Medewerker aanmaken</h2>
+			{# <h2 class="m-0 fs-2 mt-3 text-black">Medewerker aanmaken</h2> #}
+		{% endblock %}
+		<div class="p-3 d-flex flex-row">
+			<div class="w-35">
+				{# <h2 class="text-dark">Medewerker aanmaken</h2> #}
+				{{ form_start(registrationForm) }}
+				{{ form_row(registrationForm.profile.name) }}
+				{{ form_row(registrationForm.username) }}
+				{{ form_row(registrationForm.plainPassword) }}
+				{{ form_row(registrationForm.roles)}}
+				<div class="departmentLabel">
+					{{ form_row(registrationForm.location)}}
+					{{ form_row(registrationForm.profile.department) }}
+				</div>
+				<button type="submit" class="btn bg-color-sky-blue">Maak medewerker aan</button>
+				{{ form_end(registrationForm) }}
+			</div>
+			{# MEELOPER BLOK IS WEG IN COMMENTS!!!
+			 <div class="w-35 ms-3">
+				<h2 class="text-dark">Meeloper aanmaken</h2>
+				{{ form_start(meeloperForm) }}
+				{{ form_widget(meeloperForm) }}
+
+
+				<button type="submit" class="btn bg-color-sky-blue">Maak Meeloper aan</button>
+				{{ form_end(meeloperForm) }}
+			</div> #}
+
+		</div>
+
+	</section>
+{% endblock %}

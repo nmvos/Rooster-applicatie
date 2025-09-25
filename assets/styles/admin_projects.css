@@ -1,0 +1,117 @@
+#show_projects {
+  padding-top: 20px;
+}
+
+td {
+  text-align: center;
+}
+
+th {
+  text-align: center;
+}
+
+.th-afronden {
+   width: 50px; 
+   text-align: center; 
+  }
+
+td.afronden-col {
+    width: 50px; 
+    text-align: end; 
+  }
+
+
+.create-dropdown {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    width: 350px;
+    padding: 10px;
+    background-color: white;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    z-index: 100; /* Boven de overlay */
+  }
+  
+.create-dropdown p{
+    margin: 0;
+    padding: 1px 0;
+    font-size: 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+.finish-dropdown {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  width: 350px;
+  padding: 10px;
+  background-color: white;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  z-index: 100; /* Boven de overlay */
+}
+  
+.finish-dropdown p{
+    margin: 0;
+    padding: 1px 0;
+    font-size: 18px;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+
+/* opmaak forms */
+label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+input , select{
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 16px;
+  margin-bottom: 10px;
+  width: 50%;
+}
+
+form>div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.create-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99;
+}
+
+.finish-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99;
+}
+
+.custom_h2 {
+  color: #0e6281 !important;
+  font-size: 3rem !important;
+  font-weight: 700 !important;
+}

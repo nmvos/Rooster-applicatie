@@ -1,0 +1,85 @@
+
+@import url('https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&display=swap');
+
+
+:root {
+  --backgroundColor: rgb(248, 249, 250)!important;
+  --backgroundColorWhite: #fff;
+  --lightBoxShadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  --backgroundColorSkyBlue: #0e6281;
+  --backgroundColorSkyBlueHover: #0069d9;
+
+  background-color: var(--backgroundColor)
+}
+* {
+  font-family: Arial, Helvetica, sans-serif;
+}
+main{
+    background-color: var(--backgroundColor);
+    transition: transform 0.3s ease, width 0.3s ease;
+}
+body {
+  background-color: var(--backgroundColor)!important;
+
+}
+main.sideCollapsed{
+  width: 95%!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+main.sideOpen{
+  width: min(85%,calc(100vw - 245px))!important;
+  margin-left: max(245px, 14%)!important;
+  margin-right:1%!important;
+}
+
+header {
+  height: 60px; /* Zorgt ervoor dat de header altijd zichtbaar blijft */
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000; /* Zorgt ervoor dat de header altijd bovenop ligt */
+}
+
+header .logo {
+  display: flex;
+  align-items: center;
+  height: 80px;   
+  top: 10px;
+  left: 19px;    	         
+  position: relative; 
+  
+}
+
+aside,header{
+    background-color: var(--backgroundColorWhite);
+}
+section {
+  margin-top: 1%;
+  margin-bottom: 1%;
+    background: var(--backgroundColorWhite);
+    box-shadow: var(--lightBoxShadow);
+}
+section.main-content {
+  background: var(--backgroundColor);
+  box-shadow: none;
+}
+header{
+  width:100%;
+}
+.header{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  height:50px;
+}
+.bg-color-sky-blue {
+  background-color: var(--backgroundColorSkyBlue)!important;
+  color:white!important;
+}
+.bg-color-sky-blue:hover{
+  color:#7ED957!important;
+}
+

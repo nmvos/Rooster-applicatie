@@ -1,0 +1,23 @@
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background-color: #006699; /* Background color */
+    border-radius: 5px; /* Rounded corners */
+    padding: 5px 10px; /* Padding */
+}
+
+.search-input {
+    border: none; /* Remove border */
+    background: none; /* Remove background */
+    color: #ffffff; /* Text color */
+    font-size: 16px; /* Font size */
+    padding-left: 10px; /* Padding */
+    outline: none; /* Remove outline */
+    width: 100%; /* Full width */
+}
+
+.search-container svg {
+    fill: #00cc66; /* Icon color */
+    margin-right: 5px; /* Margin */
+}

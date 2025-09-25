@@ -1,0 +1,532 @@
+{% extends 'base.html.twig' %}
+{% block title %}
+	PDF Weekrooster
+{% endblock %}
+{% block body %}
+	<style>
+		table {
+			font-size: 0.5rem;
+			font-weight: 600;
+		}
+
+		table.tableClass > tbody > tr > td {
+			padding: 0px !important;
+			padding-left:2px!important;
+		}
+
+		a {
+			text-decoration: none;
+		}
+
+		.custom_h2 {
+  			color: #0e6281 !important;
+  			font-size: 3rem !important;
+  			font-weight: 700 !important;
+		}
+
+		#week-input, #year-input {
+			background-color: #0e6281 !important;
+			color: white !important;
+			border: 1px solid #0e6281;
+			border-radius: 6px;
+			padding: 4px 8px;
+			font-size: 1rem;
+			width: 70px;
+			margin: 0 4px;
+			text-align: center;
+			background: #f8fafc;
+			transition: border-color 0.2s;
+		}
+		#week-input:hover, #year-input:hover {
+			color:rgb(0, 0, 0) !important;
+			background-color:rgb(255, 255, 255) !important;
+		}
+
+		#week-input::-webkit-inner-spin-button,
+		#week-input::-webkit-outer-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+		}
+
+		#week-input:focus, #year-input:focus {
+		color: #000000 !important;
+		background-color: #ffffff !important;
+		}
+
+		#prev-week, #next-week {
+			background-color: #0e6281 !important;
+			color: white !important;
+			border: none !important;
+			border-radius: 5px;
+			margin-bottom: 4px;
+			}
+			#prev-week:hover, #next-week:hover {
+			color: #7ED957 !important;
+			background-color: #0e6281 !important;
+			}
+			#prev-week i, #next-week i {
+			color: white !important;
+			font-size: 1.5rem;
+			transition: color 0.2s;
+			}
+			#prev-week:hover i, #next-week:hover i {
+			color: #7ED957 !important;
+			}
+
+			.w-25.border.border-2.d-flex.flex-row.justify-content-between.rounded {
+			background-color: #0e6281;
+			color: #fff;
+			border-radius: 8px;
+			font-weight: normal;
+			font-size: 1.1em;
+			display: flex;
+			flex-direction: row;
+			justify-content: space-between;
+			align-items: center;
+			text-align: center;
+			max-width: 30px;
+			width: 100%;
+			margin: 0!important;
+			margin-right: 5px!important;
+			border: 2px solid #0e6281;
+			box-sizing: border-box;
+			}
+			a{
+			height: fit-content;
+			}.week-selector-btn {
+			background-color: #0e6281;
+			color: white;
+			margin-top: 5px;
+			border-radius: 5px;
+			padding: 0;
+			display: flex;
+			}
+
+			.week-selector-btn:hover {
+			color: #7ED957;
+			}
+
+			.week-selector-header {
+			background-color: #0e6281;
+			color: white;
+			border-radius: 4px;
+			max-width: 420px;
+			min-width: 220px;
+			width: 100%;    
+			font-size: 1.1rem;   
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			text-align: center;
+			padding: 0 16px;
+			gap: 8px;
+			margin-left: auto;
+			margin-right: 0;
+			box-sizing: border-box;
+			}
+
+			.week-selector-title {
+			color: white;
+			flex: 1;
+			text-align: center;
+			font-weight: 600;
+			}
+			.week-selector-box {
+				background-color: #0e6281;
+				color: #fff;
+				border-radius: 8px;
+				font-weight: normal;
+				font-size: 1.1em;
+				height: 42px;
+				max-width: 350px;
+				width: 100%;
+				box-sizing: border-box;
+			}
+		
+	</style>
+	{% set trueWeek = "now"|date("W") %}
+	{% set trueYear = "now"|date("Y") %}
+	{% set notInPast = trueWeek <= weekNumber or trueYear < year %}
+	<section class="p-3 main-content">
+	{% block headertitle %}
+                <h2 class="m-0 fs-2 mt-3 text-start custom_h2">Download weekrooster</h2>
+            {% endblock %}
+		<section class="p-2">
+			<div>
+				<div class="saveButtons">
+					<div class="mb-3">
+					<button	class="text-light text-decoration-none btn bg-color-sky-blue py-1 px-4"	onclick="generatePDF()">
+					Download PDF
+				</button>
+					</div>
+				</div>
+			<div class="d-flex justify-content-center my-3">
+				<div class="week-selector-box d-flex flex-row justify-content-between align-items-center rounded px-3 py-2">
+					<button	type="button"	id="prev-week"	class="border border-0">
+						<i	class="bi bi-arrow-left-short"></i>
+					</button>
+					<span class="d-flex align-items-center gap-2">
+						Week
+						<input type="number" id="week-input" min="1" max="53" value="{{ weekNumber }}" />
+						van
+						<input type="number" id="year-input" min="2020" max="2100" value="{{ year }}" />
+					</span>
+					<button	type="button"	id="next-week"	class="border border-0">
+						<i	class="bi bi-arrow-right-short"></i>
+					</button>
+				</div>
+			</div>
+			<div	id="pdfContainer"	class="d-flex flex-row flex-wrap">
+				{% for key, value in settings.getSignOff %}
+					<h3	class="w-100 text-center">
+						Week
+						{{ weekNumber }}
+						van
+						{{ year }}
+						afmelding kan bij
+						{{ key }}
+						-
+						{{ value }}
+					</h3>
+				{% endfor %}
+				<table	class="w-85">
+					<thead>
+						<tr	class="">
+							{% set days = {'monday': 'Maandag', 'tuesday': 'Dinsdag', 'wednesday': 'Woensdag', 'thursday':'Donderdag', 'friday': 'Vrijdag'} %}
+							{% for day, dutchDay in days %}
+								<th	class="text-center bg-light border-2">
+									{{ dutchDay }}
+									-
+									{{ weekDates[loop.index - 1] }}
+									-
+									{{ year }}
+								</th>
+							{% endfor %}
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							{% for day, dutchDay in days %}
+								<td	class="mx-2 border-2 border-top-0">
+									<table	class="w-100 table table-bordered  tableClass">
+										<thead>
+											<tr>
+												<th	class="bg-info-subtle">
+													Naam
+												</th>
+												<th	class="bg-info-subtle w-10">
+													Afd
+												</th>
+												<th	class="bg-info-subtle w-30">
+													Tijd
+												</th>
+											</tr>
+										</thead>
+										<tbody>
+											{% for schedule in schedules %}
+												{% set user = schedule.user %}
+												{% set fullName = user.profile.name %}
+												{% set nameParts = fullName|split(' ') %}
+												{# Verkrijg de eerste letter van elk naamdeel #}
+												{# De voornaam behouden #}
+												{% set firstName = nameParts|slice(0, 1)|join(' ') %}
+												{# Initialen van de achternaamdelen en tussenvoegsels #}
+												{% set initials = '' %}
+													{% for part in nameParts|slice(1) %}
+														{% if loop.last %}
+														{% set initials = initials ~ part|slice(0, 1)|capitalize ~ ' ' %}
+													{% else %}
+														{% set initials = initials ~ part|slice(0, 1) ~ ' ' %}
+													{% endif %}
+												{% endfor %}
+												{% set initials = initials|trim %}
+												{# De voornaam kan een combinatie zijn van alles behalve het laatste naamdeel #}
+												{% set firstName = nameParts[0] %}
+												{% set department = schedule.scheduled["schedule"][day]["department"] %}
+												{% set shortDepartment = department|slice(0, 3) %}
+												{# Controleer op uitzonderingen #}
+												{% if department == 'Magazijn' %}
+													{% set shortDepartment = 'Mgz' %}
+												{% elseif department == '3e leerweg' %}
+													{% set shortDepartment = 'Opl' %}
+												{% elseif department == 'Pre-wipe' %}
+													{% set shortDepartment = 'Wpe' %}
+												{% elseif department == 'Zaandam' %}
+													{% set shortDepartment = 'Znd' %}
+												{% elseif department == 'Ophaalservice' %}
+													{% set shortDepartment = 'Rit' %}
+												{% elseif department == 'Meedraaien' %}
+													{% set shortDepartment = 'Mdr' %}
+												{% elseif department == 'Project' %}
+													{% set shortDepartment = 'Prt' %}
+												{% endif %}
+												{% set morningScheduled = schedule.scheduled["schedule"][day]['morning']["scheduled"] %}
+												{% set afternoonScheduled = schedule.scheduled["schedule"][day]['afternoon']["scheduled"] %}
+												{% set differentTimingScheduled = schedule.scheduled["schedule"][day]["different_timing"]["scheduled"] %}
+												{% if morningScheduled or afternoonScheduled or differentTimingScheduled %}
+													<tr	class="border-2">
+														<td>
+															<a href="{{ path('schedule_employee', { 'highlight': user.id }) }}" class="link-dark link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
+																{{ firstName|capitalize }}
+																{{ initials }}
+															</a>
+														</td>
+														<td	class="text-center colored"	data-color="{{ settings.departmentColor[department] }}"	style="background-color:{{ settings.departmentColor[department] }}">
+															{{ shortDepartment|upper }}
+														</td>
+														<td>
+															{% if differentTimingScheduled %}
+																{{ differentTimingScheduled }}
+															{% elseif morningScheduled and afternoonScheduled %}
+																Hele dag
+															{% elseif morningScheduled %}
+																Ochtend
+															{% elseif afternoonScheduled %}
+																Middag
+															{% endif %}
+														</td>
+													</tr>
+												{% endif %}
+											{% endfor %}
+										</td>
+									</tbody>
+								</tr>
+							</tbody>
+						</table>
+					</td>
+				{% endfor %}
+			</tr>
+		</tbody>
+	</table>
+</table>
+<div	class='w-15'>
+	<table	class="w-100 tableClass">
+		<thead>
+			<tr	class="border-1">
+				<th	class="bg-light">
+					Afdeling
+				</th>
+				<th	class="bg-light">
+					Afkorting
+				</th>
+			</tr>
+		</thead>
+		<tbody	class=''>
+			{% for key, value in settings.departmentColor %}
+				{% set department = key %}
+				{% set shortDepartment = department|slice(0, 3) %}
+				{# Controleer op uitzonderingen #}
+				{% if department == 'Magazijn' %}
+					{% set shortDepartment = 'Mgz' %}
+				{% elseif department == '3e leerweg' %}
+					{% set shortDepartment = 'Opl' %}
+				{% elseif department == 'Pre-wipe' %}
+					{% set shortDepartment = 'Wpe' %}
+				{% elseif department == 'Zaandam' %}
+					{% set shortDepartment = 'Znd' %}
+				{% elseif department == 'Ophaalservice' %}
+					{% set shortDepartment = 'Rit' %}
+				{% elseif department == 'Meedraaien' %}
+					{% set shortDepartment = 'Mdr' %}
+				{% elseif department == 'Project' %}
+					{% set shortDepartment = 'Prt' %}
+				{% endif %}
+				<tr	class="border-1 colored"	data-color="{{ value }}"	style="background-color: {{ value }}">
+					<td>
+						{{ key }}
+					</td>
+					<td>
+						{{ shortDepartment }}
+					</td>
+				{% endfor %}
+			</tbody>
+		</tbody>
+	</table>
+	{% set checked = false %}
+	{% for project in projects %}
+		{% if project.isActive == true %}
+			{% set checked = true %}
+		{% endif %}
+	{% endfor %}
+	{% if checked == true %}
+		<table	class="w-100 mt-3">
+			<thead>
+				<tr	class='border-2'>
+					<th	class="text-center bg-info-subtle border-2">
+						Lopende projecten
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for project in projects %}
+					{% if project.startWeek <= weekNumber and project.startYear <= year %}
+						{% if project.endWeek >= weekNumber and project.endYear == year  or project.endWeek == null or project.endYear > year %}
+							<tr	class="border-2">
+								<td	class="fw-bold text-center bg-light">
+									{{ project.getName }}
+								</td>
+							</tr>
+						{% endif %}
+					{% endif %}
+				{% endfor %}
+			</tbody>
+		</table>
+	{% endif %}
+</div></section></section><script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+			integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=="
+			crossorigin="anonymous" referrerpolicy="no-referrer">
+	</script><script src="{{ asset('js/ShareRooster/textColoring.js') }}"></script><script>// Initialiseer tooltips
+
+		function notification(){
+			let weekNumber = {{ weekNumber }};
+			const payload={
+				weeknumber: weekNumber
+			};
+			fetch('{{ path("schedule_notification") }}',{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRF-TOKEN': '{{ csrf_token('attendance') }}'
+				},
+				body: JSON.stringify(payload)
+			})
+			.then(response => response.json())
+			.catch(error => {
+				console.error('Error:', error);
+			})
+		}
+
+			function generatePDF() {
+				let months = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
+				let date = "{{ weekDates[0] }}"
+				let dates = date.split('-')
+				let monthNumber = parseInt(dates[1])-1;
+				var element = document.querySelector('#pdfContainer');
+				var opt = {
+					margin: 0.1,
+					filename: `weekrooster-{{ weekNumber }}-{{ year }}, per maandag ${dates[0]} ${months[monthNumber]}.pdf`,
+					image: {
+						type: 'jpeg',
+						quality: 0.98
+					},
+					html2canvas: {
+						scale: 2
+					},
+					jsPDF: {
+						unit: 'in',
+						format: 'a4',
+						orientation: 'landscape'
+					}
+				};
+				
+				html2pdf().set(opt).from(element).toPdf().output('blob').then(function (pdfBlob) {
+    				// Create FormData to send the PDF
+    				let formData = new FormData();
+    				formData.append("file", pdfBlob, "example.pdf");
+					fetch('{{ path("save_pdf_to_server") }}', {
+						method: 'POST',
+						body: formData
+					})
+					.then(response => response.text())
+					.then(result => {
+						console.log('Success:', result);
+					})
+					.catch(error => {
+						console.error('Error:', error);
+					});
+				});
+				html2pdf().set(opt).from(element).save();
+				notification();
+			}
+
+			document.addEventListener('DOMContentLoaded', function () {
+				currentWeek = {{ weekNumber }};
+				currentYear = {{ year }};
+				if (currentWeek == "33" && currentYear == "2024") {
+					document.getElementById('prev-week').setAttribute('disabled', true);
+				}
+
+				function updateSchedule(week, year) { // Update the page URL and reload
+					if (week == "33" && year == "2024") {
+						document.getElementById('prev-week').setAttribute('disabled', true);
+						window.location.href = `{{ path('app_share_rooster_week', { 'year': 'YEAR', 'weekNumber': 'WEEK'}) }}`.replace('YEAR', year).replace('WEEK', week);
+						return;
+					}
+					document.getElementById('prev-week').removeAttribute('disabled', false)
+					window.location.href = `{{ path('app_share_rooster_week', { 'year': 'YEAR', 'weekNumber': 'WEEK'}) }}`.replace('YEAR', year).replace('WEEK', week);
+				}
+
+				function has53weeks(year) {
+					const first_day = new Date(year, 0, 1);
+					const first_day_number = first_day.getDay();
+					console.log(first_day);
+					console.log(first_day_number);
+					if (year % 4 == 0) { // leap year
+						return false
+					} else if (first_day_number == 4) { // ISO weeknumber starts when 
+						return true
+					} else {
+						return false
+					}
+						
+				}
+
+				document.getElementById('prev-week').addEventListener('click', function () { //Changes the weeknummer to be one lower than the current loaded weeknumber
+					currentWeek = {{ weekNumber }};
+					currentYear = {{ year }};
+					if (currentWeek > 1) {
+						currentWeek--;
+					} else {
+						currentYear--;
+						if (has53weeks(currentYear)) {
+							currentWeek = 53;
+						} else {
+							currentWeek = 52;
+						}
+						
+					} 
+					updateSchedule(currentWeek, currentYear);
+				});
+
+				document.getElementById('next-week').addEventListener('click', function () { //Changes the weeknummer to be one higher than the current loaded weeknumber
+					currentWeek = {{ weekNumber }};
+					currentYear = {{ year }};
+					if (has53weeks(currentYear)){
+						if (currentWeek < 53) {
+						currentWeek++;
+					} else {
+						currentWeek = 1;
+						currentYear++;
+					} 
+					} else {
+						if (currentWeek < 52) {
+							currentWeek++;
+						} else {
+							currentWeek = 1;
+							currentYear++;
+						} 
+					}
+					updateSchedule(currentWeek, currentYear);
+				}); 
+			});
+
+
+			document.addEventListener('DOMContentLoaded', function () {
+				const weekInput = document.getElementById('week-input');
+				const yearInput = document.getElementById('year-input');
+
+				function goToSelectedWeek() {
+					let week = parseInt(weekInput.value, 10);
+					let year = parseInt(yearInput.value, 10);
+					if (week >= 1 && week <= 53 && year >= 2020 && year <= 2100) {
+						const url = `{{ path('app_share_rooster_week', { 'year': 'YEAR', 'weekNumber': 'WEEK'}) }}`
+							.replace('YEAR', year)
+							.replace('WEEK', week);
+						window.location.href = url;
+					}
+				}
+
+				weekInput.addEventListener('change', goToSelectedWeek);
+				yearInput.addEventListener('change', goToSelectedWeek);
+			});
+			</script>{% endblock %}

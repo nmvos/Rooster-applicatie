@@ -1,0 +1,64 @@
+{% block head %}
+	<link rel="stylesheet" href="{{ asset('styles/notifications.css') }}">
+{% endblock %}
+
+{% block body %}
+	{% set newNotification = false %}
+	{% set NoNotification = false %}
+	{# set values for notifications #}
+	{% for notification in allNotifications %}
+		{% if not notification.isSeen %}
+			{% set newNotification = true %}
+		{% endif %}
+	{% endfor %}
+	{% if allNotifications|length == 0 %}
+		{% set NoNotification = true %}
+	{% endif %}
+
+	<div class="notificationOverlay"></div>
+	<div class="notification my-auto px-3">
+		<div class="d-flex">
+			<i class="bi bi-bell fs-5 text-light"></i>
+			<div class="dot" style='display:{% if newNotification %}block{% else %} none{% endif %}'></div>
+		</div>
+
+
+		<div class="notificationDropdown">
+				<button id="delete-all-notifications" class="delete-all-notifications-btn">Verwijder alle notificaties</button>
+
+			<ul>
+				{% for notification in allNotifications %}
+					<li class='d-flex flex-row justify-content-between id-{{notification.id}}'>
+						{% if notification.message['type'] == "rooster" %}
+							<div class="notificationInfo">
+								<a href="/rooster/weekrooster.pdf" class="notificationLink" target="_blank">
+									<span class="notificationSpan notificationMessage">{{notification.message['message']}}</span>
+									<span class="notificationSpan notificationTime">{{notification.message['time']}}</span>
+								</a>
+							</div>
+						{% else %}
+							<div class="notificationInfo">
+								<span class="notificationSpan notificationMessage">{{notification.message['message']}}</span>
+								<span class="notificationSpan notificationTime">{{notification.message['time']}}</span>
+							</div>
+						{% endif %}
+						<div class="deleteNotificationDiv d-flex">
+							<button class='btn deleteNotification flex-start' data-messageid='{{notification.id}}'>x</button>
+						</div>
+					</li>
+				{% endfor %}
+			</ul>
+			{% if NoNotification %}
+				Er zijn geen notificaties.
+			{% endif %}
+		</div>
+	</div>
+
+	<script>
+		const notificationPath = "{{ path("NotificationSeen") }}";
+		const notificationDeletePath = "{{ path("NotificationDelete") }}"
+		const userId = {{ app.user.id }}
+	</script>
+	<script src="{{ asset('js/notifications/notificationsDropdown.js') }}"></script>
+	<script src="{{ asset('js/notifications/notificationDelete.js') }}"></script>
+{% endblock %}

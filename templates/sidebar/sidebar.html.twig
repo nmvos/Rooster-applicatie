@@ -1,0 +1,64 @@
+{% block head %}{% endblock %}
+
+{% if is_granted('ROLE_ADMIN') %}
+	<nav class=" sidebar {{ app.request.cookies.get('sidebarState', 'Close') == 'Open' ? '' : 'collapsed' }}" id="sidebar">
+		<h2 class="h2_custom">ICT VANAF MORGEN</h2>
+       <div class="d-flex flex-column justify-content-between h-100 w-100"> 
+		<ul>
+			
+			<li>
+				<a href="{{ path('admin') }}"><i class="bi bi-speedometer"></i> Dashboard</a>
+			</li>
+			<li>
+				<a href="{{path('profiles')}}"><i class="bi bi-people-fill"></i> Alle profielen</a>
+			</li>
+			{% if is_granted('ROLE_SUPERADMIN') %}
+				<li>
+					<a href="{{ path('conceptRooster')}}"><i class="bi bi-calendar-range"></i> Concept rooster</a>
+				</li>
+			{% endif %}
+			<li>
+				<a href="{{ path('schedule_employee')}}"><i class="bi bi-calendar2-plus"></i> Rooster inplannen</a>
+			</li>
+
+			<li>
+				<a href="{{ path('weekrooster') }}"><i class="bi bi-clipboard2-check"></i> Aanwezigheidsregistratie</a>
+			</li>
+			<li>
+				<a href="{{ path('app_share_rooster') }}"><i class="bi bi-file-earmark-pdf"></i> PDF weekrooster</a>
+			</li>
+			<li>
+				<a href="{{path('create_employee')}}"><i class="bi bi-person-fill-add"></i> Medewerker aanmaken</a>
+			</li>
+
+			<li>
+				<a href="{{path('projects')}}"><i class="bi bi-boxes"></i> Projecten</a>
+			</li>
+			</ul>
+			<ul>
+			{% if is_granted('ROLE_SUPERADMIN') %}
+				<li>
+					<a href="{{ path('rapportage')}}"><i class="bi bi-bar-chart-steps"></i> Rapportage</a>
+				</li>
+				{# <li>
+					<a href="{{ path('assign_rights')}}"><i class="bi bi-person-fill-lock"></i> Rechten instellen</a>
+				</li> #}
+				<li>
+					<a href="{{path('settings')}}"><i class="bi bi-gear-fill"></i> Instellingen</a>
+				</li>
+			{% endif %}
+		</ul>
+		</div>
+			<button class="toggle-btn" id="toggle-btn">
+		<svg class="chevron" viewbox="0 0 24 24">
+			<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
+		</svg>
+	</button>
+	</nav>
+
+{% endif %}
+
+{% block javascripts %}
+	<script src="{{ asset('js/sidebar.js') }}"></script>
+
+{% endblock %}

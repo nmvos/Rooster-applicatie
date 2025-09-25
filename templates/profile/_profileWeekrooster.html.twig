@@ -1,0 +1,170 @@
+{% block body %}
+
+    <table class="schedule-table table-bordered border-light">
+        {% set days = {'monday': 'Maandag', 'tuesday': 'Dinsdag', 'wednesday': 'Woensdag', 'thursday': 'Donderdag', 'friday': 'Vrijdag'} %}
+    <thead>
+        <tr>
+      
+                <th class="">Week {{schedule.weekNumber}} <hr/> Jaar {{schedule.year}}</th>
+            {% for day, dutchDay in days %}
+                <th class='bg-color-sky-blue'>{{ dutchDay }} <br class="mobileOnly" /> {{ weekDates[loop.index - 1] }}
+                <hr/>
+                    {{ schedule.scheduled["schedule"][day]["department"]}}
+                </th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% set dayArray = schedule.scheduled["schedule"] %}
+        {% set timeSlots = {'morning': 'Ochtend', 'afternoon': 'Middag'} %}
+        {% for timeSlot_en, timeSlot_nl in timeSlots %}
+            <tr>
+                    <th class="deel bg-color-sky-blue">{{ timeSlot_nl }}</th>
+                {% for day, _ in days %}
+                    {% if dayArray[day][timeSlot_en]["attended"] == "Ziek" %}
+                        <td id="{{ day }}-{{ timeSlot_en }}" style="background-color:{{settings.colors['Ziek']}}">
+                    {% elseif dayArray[day][timeSlot_en]["attended"] == "Aanwezig" %}
+                        <td id="{{ day }}-{{ timeSlot_en }}" style="background-color:{{settings.colors['Aanwezig']}}">
+                    {% elseif dayArray[day][timeSlot_en]["attended"] == "Te laat" %}
+                        <td id="{{ day }}-{{ timeSlot_en }}" style="background-color:{{settings.colors['Aanwezig']}}">
+                    {% elseif dayArray[day][timeSlot_en]["attended"] == "Afwezig" %}
+                        <td id="{{ day }}-{{ timeSlot_en }}" style="background-color:{{settings.colors['Afwezig']}}">
+                    {% elseif dayArray[day][timeSlot_en]["attended"] == "Niet verwacht" %}
+                        <td id="{{ day }}-{{ timeSlot_en }}" style="background-color:{{settings.colors['Niet verwacht']}}">
+                    {% elseif dayArray[day][timeSlot_en]["attended"] == "Vrij" %}
+                        <td id="{{ day }}-{{ timeSlot_en }}" style="background-color:{{settings.colors['Vrij']}}">
+                     {% elseif dayArray[day][timeSlot_en]["attended"] == "Eerder weg" %}
+                        <td id="{{ day }}-{{ timeSlot_en }}" style="background-color:{{settings.colors['Aanwezig']}}">    
+                    {% elseif dayArray[day][timeSlot_en]["scheduled"] == "Ingeroosterd" %}
+                        <td id="{{ day }}-{{ timeSlot_en }}" style="background-color:{{settings.colors['Ingeroosterd']}}">
+                        
+                    {% else %}
+                        <td id="{{ day }}-{{ timeSlot_en }}" style="background-color:{{settings.colors['Niet Ingeroosterd']}}">
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<script src="{{ asset('js/textColoring.js')}}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const overlay = document.createElement('div');
+		overlay.className = 'overlay';  
+        // variable declaration of the scheduled and attended data in the JSON file of the schedule
+        var schedule = {
+			monday: '{{ schedule.scheduled["schedule"]["monday"]["different_timing"]["scheduled"] }}',
+			tuesday: '{{ schedule.scheduled["schedule"]["tuesday"]["different_timing"]["scheduled"] }}',
+			wednesday: '{{ schedule.scheduled["schedule"]["wednesday"]["different_timing"]["scheduled"] }}',
+			thursday: '{{ schedule.scheduled["schedule"]["thursday"]["different_timing"]["scheduled"] }}',
+			friday: '{{ schedule.scheduled["schedule"]["friday"]["different_timing"]["scheduled"] }}',
+		};
+        var attendence = {
+            monday: '{{ schedule.scheduled["schedule"]["monday"]["different_timing"]["attended"] }}',
+			tuesday: '{{ schedule.scheduled["schedule"]["tuesday"]["different_timing"]["attended"] }}',
+			wednesday: '{{ schedule.scheduled["schedule"]["wednesday"]["different_timing"]["attended"] }}',
+			thursday: '{{ schedule.scheduled["schedule"]["thursday"]["different_timing"]["attended"] }}',
+			friday: '{{ schedule.scheduled["schedule"]["friday"]["different_timing"]["attended"] }}', 
+        }
+
+        document.body.appendChild(overlay);
+		// Functie om de kleur te controleren op basis van de tijdinformatie voor een specifieke dag
+		function checkTime(timeString, dayOfWeek, type) {
+			if (timeString) {
+				var timeSplit = timeString.split('-');
+				if (timeSplit.length === 2) {
+					var beginHours = parseInt(timeSplit[0], 10);
+					var endHours = parseInt(timeSplit[1], 10);
+					if ((beginHours >= 6 && beginHours <= 12) && (endHours >= 6 && endHours <= 12)) {
+						overwriteColor(dayOfWeek, '-morning', type);
+						document.querySelector(`#${dayOfWeek}-morning`).innerHTML = timeString;
+						return;
+					}
+					if ((beginHours >= 13 && beginHours <= 18) && (endHours >= 13 && endHours <= 18)) {
+						overwriteColor(dayOfWeek, '-afternoon', type);
+						document.querySelector(`#${dayOfWeek}-afternoon`).innerHTML = timeString;
+						return;
+					}
+					overwriteColor(dayOfWeek, 'both', type);
+					document.querySelector(`#${dayOfWeek}-morning`).innerHTML = `${timeSplit[0]}`;
+					document.querySelector(`#${dayOfWeek}-afternoon`).innerHTML = `${timeSplit[1]}`;
+				} else {
+				}
+			} else {
+			}
+		}
+
+        // colors the section the color if there is that value in attendend
+        function overwriteAttendence(dayOfWeek, time, type) {
+            let item  = document.querySelector(`#${dayOfWeek}${time}`)
+            switch (type) {
+                case 'Ziek':
+                    item.style.backgroundColor = '{{settings.colors["Ziek"]}}';
+                    item.setAttribute('data-color', '{{settings.colors["Ziek"]}}');
+                    break;
+                case 'Aanwezig':
+                case 'Eerder weg':
+                    item.style.backgroundColor = '{{settings.colors["Aanwezig"]}}';
+                    item.setAttribute('data-color', '{{settings.colors["Aanwezig"]}}');
+                    break;
+                case 'Te laat':
+                    item.style.backgroundColor = '{{settings.colors["Aanwezig"]}}';
+                    item.setAttribute('data-color', '{{settings.colors["Aanwezig"]}}');
+                    break;
+                case 'Afwezig':
+                    item.style.backgroundColor = '{{settings.colors["Afwezig"]}}';
+                    item.setAttribute('data-color', '{{settings.colors["Afwezig"]}}');
+                    break;
+                case 'Niet verwacht':
+                    item.style.backgroundColor = '{{settings.colors["Niet verwacht"]}}';	
+                    item.setAttribute('data-color', '{{settings.colors["Niet verwacht"]}}');
+                    break;
+                case 'Vrij':
+                    item.style.backgroundColor = '{{settings.colors["Vrij"]}}';
+                    item.setAttribute('data-color', '{{settings.colors["Vrij"]}}');
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        // colors the section the color of the value in scheduled
+        function overwriteColor(dayOfWeek, time ,type) {
+			switch (time) {
+				case '-morning':
+					document.querySelector(`#${dayOfWeek}-morning`).style.backgroundColor = '{{settings.colors["Ingeroosterd"]}}';
+                    document.querySelector(`#${dayOfWeek}-morning`).setAttribute('data-color', '{{settings.colors["Ingeroosterd"]}}');
+                    overwriteAttendence(dayOfWeek, time, type);
+                    checkColors(document.querySelector(`#${dayOfWeek}-morning`));
+					break;
+				case '-afternoon':
+					document.querySelector(`#${dayOfWeek}-afternoon`).style.backgroundColor = '{{settings.colors["Ingeroosterd"]}}';
+                    document.querySelector(`#${dayOfWeek}-afternoon`).setAttribute('data-color', '{{settings.colors["Ingeroosterd"]}}');
+                    overwriteAttendence(dayOfWeek, time, type);
+                    checkColors(document.querySelector(`#${dayOfWeek}-afternoon`));
+					break;
+				case 'both':
+					document.querySelector(`#${dayOfWeek}-morning`).style.backgroundColor = '{{settings.colors["Ingeroosterd"]}}';
+					document.querySelector(`#${dayOfWeek}-afternoon`).style.backgroundColor = '{{settings.colors["Ingeroosterd"]}}';
+                    document.querySelector(`#${dayOfWeek}-morning`).setAttribute('data-color', '{{settings.colors["Ingeroosterd"]}}');
+                    document.querySelector(`#${dayOfWeek}-afternoon`).setAttribute('data-color', '{{settings.colors["Ingeroosterd"]}}');
+                    overwriteAttendence(dayOfWeek, '-morning', type);
+                    overwriteAttendence(dayOfWeek, '-afternoon', type);
+                    checkColors(document.querySelector(`#${dayOfWeek}-morning`));
+                    checkColors(document.querySelector(`#${dayOfWeek}-afternoon`));
+					break;
+				default:
+					break;
+			}
+		}
+
+        // calls checktime with the day and the schedule data this contains to color these correctly
+		checkTime(schedule.monday, 'monday', attendence.monday);
+		checkTime(schedule.tuesday, 'tuesday', attendence.tuesday);
+		checkTime(schedule.wednesday, 'wednesday', attendence.wednesday);
+		checkTime(schedule.thursday, 'thursday', attendence.thursday);
+		checkTime(schedule.friday, 'friday', attendence.friday);
+    })
+</script>
+
+{% endblock %}

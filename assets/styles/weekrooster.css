@@ -1,0 +1,360 @@
+:root {
+  --border-radius: 5px;
+}
+a{
+  text-decoration: none;
+  color: #006633;
+}
+
+h1,h2 {
+  font-size: 24px;
+  color: #006633; 
+  margin: 0px;
+  text-align: center;
+}
+
+form {
+  width: 100%;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+}
+.departmentSmall {
+  font-size: 0.5em;
+}
+
+thead{
+  position: sticky;
+  top: 0;
+  border-bottom: 1px #006633 solid;
+  z-index: 2;
+}
+
+table th,
+table td {
+  text-align: left;
+}
+
+table thead tr {
+  border-collapse: separate !important;
+  border-bottom: 1px #006633 solid;
+}
+
+table th {
+  background-color: #ffffff;
+  color: #006633; /* Groene kleur */
+  
+}
+
+thead > tr >th, thead > tr{
+  background-color: #38b6ff !important;
+}
+
+table td {
+  padding: 10px 0px;
+  border-right: 2px solid #ddd;
+  border-top: 2px solid #063;
+}
+
+/* Verwijder de rechter border van de laatste kolom */
+table th:last-child,
+table td:last-child {
+  border-right: none;
+}
+
+.custom_h2 {
+  color: #0e6281 !important;
+  font-size: 3rem !important;
+  font-weight: 700 !important;
+}
+
+
+/* Bold styling voor namen */
+table td.name {
+  font-weight: bold;
+  border-right: 1px solid #ddd;
+  color: #006633; /* Groene kleur */
+}
+
+
+.search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #0e6281; 
+  border-radius: 5px; 
+  padding: 5px 10px; 
+}
+
+.search-input {
+  border: none; 
+  background: none; 
+  color: white; 
+  font-size: 16px; 
+  padding-left: 10px; 
+  outline: none; 
+  width: 100%; 
+}
+
+svg {
+  fill: white; 
+  margin-right: 5px; 
+}
+
+.search-input::placeholder {
+color: white; 
+}
+
+.search-container:hover > svg,
+.search-container:hover > .search-input::placeholder
+{
+color:#7ED957;
+fill: #7ED957;
+}
+/* Styling for the attendance week form, ensuring a consistent border and rounded corners */
+#attendanceWeekForm{
+  border-color: #0e6281;
+
+}
+
+#attendanceDayForm{
+  
+    border-color: #0E6281 !important;
+    border-style: solid;
+    border-width: 2px;
+    border-collapse: collapse;
+    padding: 1px;
+    background-color: #38b6ff;
+}
+
+
+#attendanceWeekForm {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  border-color: #0E6281;
+  border-style: solid;
+  border-width: 2px;
+  border-collapse: collapse;
+  padding: 1px;
+}
+
+th.text-start.ps-2 {
+  background-color: #38b6ff;
+  color: white;
+}
+
+th.text-end.pe-2 {
+  background-color: #38b6ff;
+  color: white;
+}
+
+td.name.text-start.ps-2 {
+  background-color: white;
+  padding-left: 10px;
+}
+
+td.text-end.ps-2 {
+  background-color: white;
+}
+
+td.departmentSmall.text-start.fs-6.ps-2.mobileNoView{
+    background-color: white;
+}
+
+td.text-start.ps-2.mobileNoView {
+  text-align: left !important;
+}
+
+#sortDepartment.text-start.ps-2{
+  text-align: left !important;
+}
+
+
+
+#sortNames.text-start.ps-2:hover {
+  color: #7ED957;
+  cursor: pointer;
+}
+
+#sortDepartment.text-start.ps-2:hover {
+  color: #7ED957;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none!important;
+}
+
+.mobileView {
+  display: none;
+}
+.mobileViewDiv {
+  display: none;
+}
+.mobileNoView{
+  display:table-cell;
+}
+.mobileNoViewDiv{
+  display: block;
+}
+.mobileViewOnly{
+  display: none;
+}
+.square{
+  width: 25px;
+  height: 25px;
+}
+.mobileFlex{
+  flex-direction: row;
+}
+.mobileWidth{
+  width: 25%;
+  margin-left: 1rem !important;
+}
+@media screen and (max-width:768px) {
+  .mobileNoView{
+    display:none!important;
+  }
+  .mobileView {
+    display: table-cell;
+  }
+  .mobileViewDiv {
+    display: block;
+  }
+  .mobileView + select {
+    width: 75%!important;
+  }
+  .mobileFullSize{
+    width: 100%!important;
+  }
+  .mobileNoViewDiv{
+    display: none!important;
+  }
+  .mobileViewOnly{
+    display: block;
+  }
+  .mobileFlex{
+    flex-direction: column;
+  }
+  .mobileWidth{
+    width: 100%;
+    margin-left: 0rem!important;
+  }
+}
+.profile-icon:hover {
+  color: #006633 !important;
+}
+
+#attendanceWeekForm a:hover,
+#attendanceDayForm a:hover {
+  color: #7ED957 !important;
+}
+
+
+#attendanceWeekForm td {
+  text-align: center;
+}
+#prev-week, #next-week {
+  background-color: #0e6281 !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 5px;
+  margin-bottom: 4px;
+}
+#prev-week:hover, #next-week:hover {
+  color: #7ED957 !important;
+  background-color: #0e6281 !important;
+}
+#prev-week i, #next-week i {
+  color: white !important;
+  font-size: 1.5rem;
+  transition: color 0.2s;
+}
+#prev-week:hover i, #next-week:hover i {
+  color: #7ED957 !important;
+}
+
+.w-25.border.border-2.d-flex.flex-row.justify-content-between.rounded {
+  background-color: #0e6281;
+  color: #fff;
+  border-radius: 8px;
+  font-weight: normal;
+  font-size: 1.1em;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  margin: 0!important;
+  margin-right: 5px!important;
+  border: 2px solid #0e6281;
+  box-sizing: border-box;
+}
+a{
+  height: fit-content;
+}.week-selector-btn {
+  background-color: #0e6281;
+  color: white;
+  margin-top: 5px;
+  border-radius: 5px;
+  padding: 0;
+  display: flex;
+}
+
+.week-selector-btn:hover {
+  color: #7ED957;
+}
+
+
+
+.week-selector-title {
+  color: white;
+  flex: 1;
+  text-align: center;
+  font-weight: 600;
+}
+
+#week-input, #year-input {
+    background-color: #0e6281 !important;
+    color: #fff !important;
+    border: 1px solid #0e6281;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 1rem;
+    width: 70px;
+    margin: 0 4px;
+    text-align: center;
+    transition: border-color 0.2s;
+}
+#week-input:hover, #year-input:hover {
+  color: #000000 !important;
+  background-color: #ffffff !important;
+}
+
+#week-input::-webkit-inner-spin-button,
+#week-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#week-input:focus, #year-input:focus {
+  color: #000000 !important;
+  background-color: #ffffff !important;
+}
+
+.search-container svg.bi.bi {
+  fill: white;
+}
+
+.search-container:hover svg.bi.bi {
+  fill: #7ED957;
+}
+
+#sortNames:hover span {
+    color: #7ED957; 
+}

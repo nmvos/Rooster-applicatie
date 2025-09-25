@@ -1,0 +1,18 @@
+{% set exclude_sidebar = true %}
+{% set exclude_header = true %}
+{% extends 'base.html.twig' %}
+
+{% block title %}404{% endblock %}
+
+{% block head %}
+	{{ parent() }}
+{% endblock %}
+
+{% block body %}
+	<main class="w-100 d-flex justify-content-center ">
+		<section class='w-50 p-3'>
+			<h2>Error 404: Deze pagina bestaat niet</h2>
+			<a class='btn bg-color-sky-blue' href="{{path('home')}}">Ok</a>
+		</section>
+	</main>
+{% endblock %}

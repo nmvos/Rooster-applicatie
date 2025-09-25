@@ -1,0 +1,187 @@
+/* Stijl voor de sidebar */
+.sidebar {
+  display: flex;
+  width: 13%;
+  min-width: 240px;
+  flex-direction: column;
+  transition: transform 0.3s ease, width 0.3s ease;
+  z-index: 3;
+  background-size: cover;
+  background-color: #38b6ff;
+  position: fixed;
+  top: 60px;
+  left: 0;
+  transform: translateX(0);
+  padding-top: 20px;
+  padding-bottom:20px;
+  border-radius: 0 10px 10px 0;
+}
+
+/* Klasse voor het tonen van de sidebar */
+.sidebar.collapsed {
+  transform: translateX(-100%);
+  
+}
+
+.h2_custom {
+    color: #ffffff !important;           
+    font-family: 'league Spartan';
+    font-size: 20px; 
+    padding-left: 10px;  
+         
+}
+
+.sidebar.fixed {
+  width: 250px;
+}
+
+/* Stijl voor de lijst binnen de sidebar */
+.sidebar ul {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  z-index: 2;
+}
+
+/* Stijl voor de lijst items */
+.sidebar ul li {
+  padding-left: 5px;
+  list-style-type: none;
+}
+
+/* Stijl voor de links in de lijst */
+.sidebar ul li a {
+  color: #fff;
+  text-decoration: none;
+  padding: 5px;
+  display: block;
+  transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease,
+    font-size 0.3s ease;
+}
+
+.sidebar ul li a[disabled] {
+  color: #1a1a1a;
+  background:lightgray;
+  text-decoration: none;
+  padding: 10px;
+  display: block;
+}
+.sidebar a {
+  text-decoration: none;
+  color: #fff;
+}
+
+.sidebar .nav-link {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  color: #fff;
+}
+
+.sidebar .nav-link i {
+  margin-right: 10px;
+}
+
+/* Hover-stijl voor de links in de lijst */
+.sidebar ul li a:hover {
+  color: white;
+  background-color: #04034877;
+  font-size: 16px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+.sidebar ul li a[disabled]:hover {
+  cursor: no-drop;
+  color: #1a1a1a;
+  background:lightgray;
+  text-decoration: none;
+  padding: 10px;
+  font-size: 16px;;
+  box-shadow: none;
+  font-size: initial;
+  display: block;
+}
+.nav-item {
+  list-style: none;
+}
+
+.nav-item .nav-link {
+  padding: 10px 15px;
+  color: #fff;
+}
+
+.nav-item .nav-link:hover {
+  background-color: #1e90ff;
+  color: #fff;
+}
+
+/* Stijl voor pijl knop */
+.toggle-btn {
+  background-color: #ffffff; 
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 1px 0px;
+  font-size: 10px;
+  position: absolute;
+  right: -10%;
+  top:46%;
+  transition: left 0.3s ease;
+  border: #ffffff 3px solid;
+  z-index:100;
+}
+
+.toggle-btn .chevron {
+  width: 28px;
+  /* min-width: 30px; */
+  height: 28px;
+  fill: #1b1b1b;
+  transition: transform 0.3s ease;
+}
+ nav:not(.collapsed) .toggle-btn {
+  right:-2%;
+}
+
+
+#imageLink {
+  width: 100%;
+}
+
+#imageLink img {
+  width: 100%;
+  padding: 10px;
+}
+
+@media screen and (max-width:768px) {
+  .sidebar{
+    width: 40%;
+  }
+  .toggle-btn{
+    left: 38%;
+  }
+}
+
+@media screen and (max-width:426px) {
+  .sidebar{
+    width:100%;
+  }
+  .toggle-btn{
+    left: 90%;
+  }
+}
+
+.settings_main{
+  margin-top: 40px;
+ 
+}
+
+@media screen and (max-width: 768px) {
+  .settings_main {
+    margin-left: 40%; 
+  }
+}
+
+@media screen and (max-width: 426px) {
+  .settings_main {
+    margin-left: 100%; 
+  }
+}

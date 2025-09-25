@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+{% set exclude_sidebar = true %}
+{% set exclude_header = true %}
+
+{% block title %}Rooster App IVM{% endblock %}
+
+{% block head %}
+{{ parent() }}
+<link rel="stylesheet" href="{{ asset('styles/login.css') }}">
+<style>
+    body{background-image: url("uploads/background/background.jpg")}
+</style>
+{% endblock %}
+
+{% block body %}
+
+
+{% if app.user and app.user.isPasswordReset() %}
+    <div class="modal fade" id="passwordResetModal" tabindex="-1" role="dialog" aria-labelledby="passwordResetModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="passwordResetModalLabel">Password Reset Required</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>You need to reset your password before proceeding.</p>
+                    <a href="{{ path('password_reset') }}" class="btn bg-color-sky-blue">Reset Password</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function() {
+            $('#passwordResetModal').modal('show');
+        });
+    </script>
+{% endif %}
+<section class='w-65 h-50 d-flex flex-column justify-content-center align-self-center align-center p-3'>
+    <form method="post" data-turbo="false">
+        {% if error %}
+        <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+        {% endif %}
+        
+        {% if app.user %}
+        <div class="mb-3">
+            You are logged in as {{ app.user.userIdentifier }}, <a href="{{ path('logout') }}">Logout</a>
+        </div>
+        {% endif %}
+
+        <h1>Log in</h1>
+        <!-- Gebruikersnaam -->
+        <label for="inputUsername">Gebruikersnaam</label>
+        <input type="text" value="{{ last_username }}" name="username" id="inputUsername" class="form-control"
+            autocomplete="username" required autofocus>
+        <!-- Wachtwoord -->
+        <label for="inputPassword">Wachtwoord</label>
+        <input type="password" name="password" id="inputPassword" class="form-control" autocomplete="current-password"
+            required>
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+        <button class="btn bg-color-sky-blue" type="submit">Log in</button>
+        
+    </form>
+</section>    
+ 
+{% endblock %}

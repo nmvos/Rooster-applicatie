@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+{% block title %}Rechten instellen
+{% endblock %}
+{% block head %}
+	{{ parent() }}
+	<link rel="stylesheet" href="{{ asset('styles/admin_assign_rights.css') }}"/>
+{% endblock %}
+
+{% block body %}
+	<section class="p-3 main-content">
+	      {% block headertitle %}
+                <h2 class="m-0 fs-2 text-black">Rechten instellen</h2>
+            {% endblock %}
+	<section class="searchfield p-2">
+	 <div class="d-flex flex-row justify-content-between">
+          <div class="input-group w-25 mobileFullSize">
+            <span class="input-group-text "><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" id="searchInput" placeholder="Zoek medewerker">
+            <ul id="autocompleteList" class="list-group position-absolute mt-5 w-100 z-3"></ul>
+        </div>
+		</section>
+		<section class="mt-3">
+			{# alleen gebruikers met de SuperAdmin rol kunnen rollen aanpassen #}
+			{% if is_granted('ROLE_SUPERADMIN') %}
+				{% set sessionUser =  app.user.id %}
+				<div class=" p-1 w-100 rounded">
+					<table class='table-bordered w-100 mx-auto'>
+						<thead>
+							<th class='px-2'>Naam</th>
+							<th class='px-2'>Gebruikersnaam</th>
+							<th class='px-2 text-end'>Rol</th>
+							<th class="w-10"/>
+						</thead>
+						{% for user in users %}
+							{% if sessionUser != user.id %}
+								<tr class="">
+									<td class='p-2'>{{user.profile.name}}
+									</td>
+									<td class='p-2'>{{ 'ROLE_SUPERADMIN' in user.roles ? '*******************' : user.username }}
+									</td>
+									<form action="{{ path('user_edit_roles', {'id': user.id}) }}" method="post">
+										<td
+											class='p-2 text-end'>
+											{# hier worden de rollen uitgelezen en gezet zoals ze in de database staan #}
+											<select id="roles" name="roles">
+												<option value="ROLE_USER" {{ user.roles in 'ROLE_SUPERADMIN' ? 'disabled' : '' }} {{ 'ROLE_USER' in user.roles ? 'selected' : '' }}>Gebruiker</option>
+												<option value="ROLE_ADMIN" {{ user.roles in 'ROLE_SUPERADMIN' ? 'disabled' : '' }} {{ 'ROLE_ADMIN' in user.roles ? 'selected' : '' }}>Admin</option>
+												<option value="ROLE_SUPERADMIN" {{ 'ROLE_SUPERADMIN' in user.roles ? 'selected' : '' }}>SuperAdmin</option>
+											</select>
+										</td>
+										<td class='p-2 w-10'>
+											<button type="submit" class='rounded btn bg-color-sky-blue px-2 py-0'>Opslaan</button>
+										</td>
+									</form>
+								</tr>
+							{% endif %}
+						{% endfor %}
+					</table>
+				</div>
+			{% endif %}
+		</section>
+	</section>
+	<script src="{{ asset('js/assign_rights/Searchfunction.js')}}"></script>
+{% endblock %}
+

@@ -1,0 +1,549 @@
+{% extends 'base.html.twig' %} 
+
+{% block title %}Instellingen{% endblock %}
+
+{% block head %}
+  {{ parent() }}
+  <link rel="stylesheet" href="{{ asset('styles/admin_settings.css') }}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+{% endblock %}
+  
+{% block body %}
+<article class="settings_main p-3">
+    {% block headertitle %}
+        <h2 class="m-0 fs-2 mt-3 text-start custom_h2">Instellingen</h2>
+    {% endblock %}
+
+    <div class="accordion" id="mainAccordion">
+        <!-- Uiterlijk Instellingen -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#appearanceSettings" aria-expanded="false" aria-controls="appearanceSettings">
+                    Uiterlijk Instellingen
+                </button>
+            </h2>
+            <div id="appearanceSettings" class="accordion-collapse collapse " data-bs-parent="#mainAccordion">
+                <div class="accordion-body">
+                    <div class="accordion" id="appearanceSubAccordion">
+                    <!-- Fav Icon -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#favIconSettings" aria-expanded="false" aria-controls="favIconSettings">
+                                    Fav Icon
+                                </button>
+                            </h2>
+                            <div id="favIconSettings" class="accordion-collapse collapse" data-bs-parent="#appearanceSubAccordion">
+                                <div class="accordion-body">
+                                   <img src='{{ asset("uploads/favicon/fav-icon.png") }}' class="m-1 img-fluid"/>
+                                    {{ form_start(favIconForm, { 'attr': { 'enctype': 'multipart/form-data' } }) }}
+                                        {{ form_row(favIconForm.favIcon) }}
+                                        <button type="submit" class="btn bg-color-sky-blue mt-1">Upload</button>
+                                    {{ form_end(favIconForm) }}
+                                    <span>Kan enige tijd duren voordat het geüpdate wordt</span>
+                                </div>
+                            </div>
+                        </div>
+                    <!-- Achtergrond -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#backgroundSettings" aria-expanded="false" aria-controls="backgroundSettings">
+                                    Inlog Achtergrond
+                                </button>
+                            </h2>
+                            <div id="backgroundSettings" class="accordion-collapse collapse" data-bs-parent="#appearanceSubAccordion">
+                                <div class="accordion-body">
+                                    <img src='/uploads/background/background.jpg' class="m-1 img-fluid custom_background"/>
+                                    {{ form_start(backgroundForm, { 'attr': { 'enctype': 'multipart/form-data' } }) }}
+                                        {{ form_row(backgroundForm.BackGround) }}
+                                        <button type="submit" class="btn bg-color-sky-blue mt-1">Upload</button>
+                                    {{ form_end(backgroundForm) }}
+                                    <span>Kan enige tijd duren voordat het geüpdate wordt</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Logo -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#logoSettings" aria-expanded="false" aria-controls="logoSettings">
+                                    Logo
+                                </button>
+                            </h2>
+                            <div id="logoSettings" class="accordion-collapse collapse" data-bs-parent="#appearanceSubAccordion">
+                                <div class="accordion-body">
+                                    <img src='/uploads/logo/logo.png' class="m-1 img-fluid custom_logo"/>
+                                    {{ form_start(logoForm, { 'attr': { 'enctype': 'multipart/form-data' } }) }}
+                                        {{ form_row(logoForm.Logo) }}
+                                        <button type="submit" class="btn bg-color-sky-blue mt-1">Upload</button>
+                                    {{ form_end(logoForm) }}
+                                    <span>Kan enige tijd duren voordat het geüpdate wordt</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Afdelingen Instellingen -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#departmentSettings" aria-expanded="false" aria-controls="departmentSettings">
+                    Afdelingen Instellingen
+                </button>
+            </h2>
+            <div id="departmentSettings" class="accordion-collapse collapse" data-bs-parent="#mainAccordion">
+                <div class="accordion-body">
+                    <div class="accordion" id="departmentSubAccordion">
+                        <!-- Maximaal Aantal Personen per Afdeling -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#maxEmployees" aria-expanded="false" aria-controls="maxEmployees">
+                                    Maximaal Aantal Personen per Afdeling
+                                </button>
+                            </h2>
+                            <div id="maxEmployees" class="accordion-collapse collapse" data-bs-parent="#departmentSubAccordion">
+                                <div class="accordion-body" id='Department'>
+                                    {% for key, value in settings.departmentColor|sort %}
+                                        <div class="d-flex flex-row m-1 align-items-center">
+                                            <input type='color' id='color-{{key}}' class='departmentColor' value="{{value}}" data-colorType='{{key}}' name='{{key}}' disabled>
+                                            <label for='{{key}}' class='mx-1'>{{key}}</label>
+                                            <input type="number" id="departmentMax-{{key}}" class="form-control department-max-input" min="0" value="{{ departments[key].maxEmployees|default('') }}" disabled>
+                                            <button type="button" class="btn bg-color-sky-blue ms-1 edit-department" data-key="{{key}}">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                            <button id="department_max-{{key}}" type="button" class="btn bg-color-sky-blue ms-1 save-department" style="display:none;">
+                                                <i class="fas fa-save"></i>
+                                            </button>
+                                        </div>
+                                    {% endfor %}
+                                    <!-- Voeg een afdeling toe -->
+                                    <div id="departmentManagement" class="" style="display: none;">
+                                       <div class="d-flex flex-row align-items-center justify-content-between w-100">
+                                            <!-- Linkerkant -->
+                                            <div class="d-flex flex-row align-items-center flex-wrap" style="gap: 0.6rem;">
+                                                <input type='color' id="departmentAddColor" class="m-1" value="#bb00bb" title="Kies kleur">
+                                                <input type='text' id="departmentAddName" class='rounded' placeholder="Naam afdeling">
+                                            </div>
+                                            <!-- Rechterkant -->
+                                            <div class="d-flex flex-row align-items-center" style=" flex: 1; justify-content: flex-end;">
+                                                 <input type='number' id="departmentAddMax" class="form-control department-max-input" min="0">
+                                                 <button id="department_add" type="button" class="btn bg-color-sky-blue save_button me-1">
+                                                 <i class="fas fa-save fa-lg"></i>
+                                                 </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- + icon -->
+                                    <div class="d-flex flex-row m-1 align-items-center justify-content-end">
+                                        <button id="showAddDepartment" type="button" class="btn bg-color-sky-blue ms-1">
+                                            <i class="fa-solid fa-plus fa-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>  
+
+        <!-- Algemene Instellingen -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#generalSettings" aria-expanded="false" aria-controls="generalSettings">
+                    Algemene Instellingen
+                </button>
+            </h2>
+            <div id="generalSettings" class="accordion-collapse collapse" data-bs-parent="#mainAccordion">
+                <div class="accordion-body">
+                <!-- Aantal Vrije Dagen -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vacationDays" aria-expanded="false" aria-controls="vacationDays">
+                                Aantal Vrije Dagen
+                            </button>
+                        </h2>
+                        <div id="vacationDays" class="accordion-collapse collapse" data-bs-parent="#generalSettings">
+                            <div class="accordion-body">
+                                <p>Het aantal vrije dagen en full-time werknemer recht op heeft</p>
+                                <div>
+                                    <input type='number' id="AVD" class='rounded w-30' min="1" max="365" value='{{settings.AVD}}'>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                <!-- Afmelden Bij -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#signOff" aria-expanded="false" aria-controls="signOff">
+                                Afmelden Bij
+                            </button>
+                        </h2>
+                        <div id="signOff" class="accordion-collapse collapse" data-bs-parent="#generalSettings">
+                            <div class="accordion-body">
+                                <table class='w-90 ms-3'>
+                                    <thead>
+                                        <th></th>
+                                        <th>Persoon</th>
+                                        <th>Telefoonnummer</th>
+                                    </thead>
+                                    <tr>
+                                        {% for key, value in settings.getSignOff %}
+                                            <td>Huidig</td>
+                                            <td id='personText'>{{key}}</td>
+                                            <td id='telefoonText'>{{value}}</td>
+                                        {% endfor %}
+                                        {% if settings.getSignOff == null %}
+                                            <td>Huidig</td>
+                                            <td id='personText'>geen persoon gevonden</td>
+                                            <td id='telefoonText'>geen telefoonnummer gevonden</td>
+                                        {% endif %}
+                                    </tr>
+                                    <tr>
+                                        {% for key, value in settings.getSignOff %}
+                                            <td></td>
+                                            <td>
+                                                <input type='text' id='persoon' class='signoff' value="{{key}}" data-person name='persoon'>
+                                            </td>
+                                            <td>
+                                                <input type='text' id='telefoon' class='signoff' value="{{value}}" data-person name='telefoon'>
+                                            </td>
+                                        {% endfor %}
+                                        {% if settings.getSignOff == null %}
+                                            <td></td>
+                                            <td>
+                                                <input type='text' id='persoon' class='signoff' value="" data-person name='persoon'>
+                                            </td>
+                                            <td>
+                                                <input type='tel' id='telefoon' class='signoff' value="" data-telefoon name='telefoon'>
+                                            </td>
+                                        {% endif %}
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                <!-- Statuskleur Instellingen -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#statusColors" aria-expanded="false" aria-controls="statusColors">
+                                Statuskleur Instellingen
+                            </button>
+                        </h2>
+                        <div id="statusColors" class="accordion-collapse collapse" data-bs-parent="#generalSettings">
+                            <div class="accordion-body">
+                                {% for key, value in settings.colors %}
+                                    <div class="d-flex flex-row m-1">
+                                        <input type='color' id='{{key}}' class='color' value="{{value}}" data-colorType='{{key}}' name='{{key}}'>
+                                        <label for='{{key}}' class='mx-1'>{{key}}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        
+        <!-- Rechten Instellen -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#permissionsSettings" aria-expanded="false" aria-controls="permissionsSettings">
+                    Rechten Instellen
+                </button>
+            </h2>
+            <div id="permissionsSettings" class="accordion-collapse collapse{% if app.request.get('open') == 'permissionsSettings' %} show{% endif %}" data-bs-parent="#mainAccordion">
+                <div class="accordion-body">
+                    <div class="accordion" id="permissionsSubAccordion">
+                        <!-- Zoekbalk -->
+                        <div class="mb-3">
+                            <div class="relative search-container">
+                                <input type="text" class="search-input" id="searchInput" placeholder="Zoeken medewerker...">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.442 1.398a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+                                </svg>
+                                <ul id="autocompleteList" class="list-group position-absolute mt-5 w-100 z-3"></ul>
+                            </div>
+                        </div>
+                        {# alleen gebruikers met de SuperAdmin rol kunnen rollen aanpassen #}
+                        {% if is_granted('ROLE_SUPERADMIN') %}
+                            {% set sessionUser =  app.user.id %}
+                            <div class="p-1 w-100 rounded">
+                                <table class='table-bordered w-100 mx-auto'>
+                                    <thead>
+                                        <th class='px-2'>Naam</th>
+                                        <th class='px-2'>Gebruikersnaam</th>
+                                        <th class='px-2 text-end'>Rol</th>
+                                        <th class="w-10"/>
+                                    </thead>
+                                    {% for user in users %}
+                                        {% if sessionUser != user.id %}
+                                            <tr class="">
+                                                <td class='p-2'>{{user.profile.name}}</td>
+                                                <td class='p-2'>{{ 'ROLE_SUPERADMIN' in user.roles ? '*******************' : user.username }}</td>
+                                                <form action="{{ path('user_edit_roles', {'id': user.id}) }}" method="post">
+                                                    <td class='p-2 text-end'>
+                                                        <select id="roles" name="roles">
+                                                            <option value="ROLE_USER" {{ user.roles in 'ROLE_SUPERADMIN' ? 'disabled' : '' }} {{ 'ROLE_USER' in user.roles ? 'selected' : '' }}>Gebruiker</option>
+                                                            <option value="ROLE_ADMIN" {{ user.roles in 'ROLE_SUPERADMIN' ? 'disabled' : '' }} {{ 'ROLE_ADMIN' in user.roles ? 'selected' : '' }}>Admin</option>
+                                                            <option value="ROLE_SUPERADMIN" {{ 'ROLE_SUPERADMIN' in user.roles ? 'selected' : '' }}>SuperAdmin</option>
+                                                        </select>
+                                                    </td>
+                                                    <td class='p-2 w-10'>
+                                                        <button type="submit" class='rounded btn bg-color-sky-blue px-2 py-0'>Opslaan</button>
+                                                    </td>
+                                                </form>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </table>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</article>
+<script src="{{ asset('js/assign_rights/Searchfunction.js')}}"></script>
+
+    <script>
+        document.getElementById('AVD').addEventListener('change', function(){
+            let value= document.getElementById('AVD').value;
+            const payload = {
+                value: value
+            };
+            fetch('{{path("settings_AVD")}}', {
+                method:'POST',
+                headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token("AVD") }}'
+                    },
+                    body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        })
+
+  
+        // Maximaal aantal personen per afdeling functie
+        document.querySelectorAll('.edit-department').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const key = this.getAttribute('data-key');
+                const colorInput = document.getElementById('color-' + key);
+                const numberInput = document.getElementById('departmentMax-' + key);
+                const saveBtn = document.getElementById('department_max-' + key);
+
+                colorInput.disabled = false;
+                numberInput.disabled = false;
+                saveBtn.style.display = '';
+                this.style.display = 'none';
+            });
+        });
+
+        document.querySelectorAll('.save-department').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const key = this.id.replace('department_max-', '');
+                const colorInput = document.getElementById('color-' + key);
+                const numberInput = document.getElementById('departmentMax-' + key);
+                const editBtn = document.querySelector('.edit-department[data-key="' + key + '"]');
+                const colorValue = colorInput.value;
+                const maxPeople = numberInput.value;
+
+                // Sla kleur op
+                fetch('{{ path("settings_update_department_color") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token("update_department_color") }}'
+                    },
+                    body: JSON.stringify({
+                        colorType: key,
+                        value: colorValue
+                    })
+                }).catch(error => console.error('Error:', error));
+
+                // Sla max aantal personen op
+                fetch('{{ path("max_departments") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token("update_department_limit") }}'
+                    },
+                    body: JSON.stringify({
+                        department: key,
+                        maxEmployees: parseInt(maxPeople)
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        colorInput.disabled = true;
+                        numberInput.disabled = true;
+                        btn.style.display = 'none';
+                        editBtn.style.display = '';
+                    } else {
+                        alert('Fout bij opslaan!');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        });
+
+        document.getElementById('department_add').addEventListener('click', function(){
+            let name = document.getElementById('departmentAddName').value.trim();
+            let color = document.getElementById('departmentAddColor').value;
+            let max = document.getElementById('departmentAddMax').value;
+
+            if (!name) {
+                alert('Vul een afdelingsnaam in.');
+                return;
+            }
+            if (!max || max < 0) {
+                alert('Vul een geldig maximaal aantal personen in.');
+                return;
+            }
+
+            // Disable de button om spam te voorkomen
+            const addBtn = this;
+            addBtn.disabled = true;
+
+            const payload = {
+                value: name,
+                color: color,
+                maxEmployees: parseInt(max)
+            };
+            fetch('{{ path("settings_add_department")}}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token("add_department") }}'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    location.reload(); // herlaad om nieuwe afdeling te tonen
+                } else if (data.status === 'error' && data.message === 'Afdeling bestaat al') {
+                    alert('Deze afdeling bestaat al.');
+                    addBtn.disabled = false;
+                } else {
+                    alert('Fout bij toevoegen afdeling!');
+                    addBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                addBtn.disabled = false;
+            });
+        });
+
+        document.querySelectorAll('.color').forEach(function (input) {
+            input.addEventListener('blur', function () {
+                const colorType = this.getAttribute('data-colorType');
+                const value = this.value;
+
+                const payload = {
+                    colorType : colorType,
+                    value: value
+                };
+                fetch('{{ path("settings_update_color")}}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token("update_color") }}'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => response.json())
+                .catch(error => {
+                    console.error('Error:', error);
+                })
+            })
+        })
+
+        function addAJAXDepartmentColor(input) {
+            input.addEventListener('blur', function () {
+                const colorType = this.getAttribute('data-colorType');
+                const value = this.value;
+
+                const payload = {
+                    colorType: colorType,
+                    value: value
+                };
+
+                fetch('{{ path("settings_update_department_color")}}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token("update_department_color") }}'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => response.json())
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        }
+        function addAJAXSignOff(input) {
+            input.addEventListener('blur', function () {
+                const personInput = document.querySelector("#persoon");
+
+                const telefoonInput = document.querySelector("#telefoon");
+                const value = this.value;
+
+                const personValue = personInput.value;
+                const telefoonValue = telefoonInput.value;
+
+                const payload = {
+                    persoon: personValue,
+                    telefoon: telefoonValue
+                };
+
+                fetch('{{ path("settings_update_sign_off")}}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token("update_sign_off") }}'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => response.json())
+                .catch(error => {
+                    console.error('Error:', error);
+                })
+                .then(data => {
+                    document.getElementById('telefoonText').innerHTML = telefoonValue;
+                    document.getElementById('personText').innerHTML = personValue
+                });
+            });
+        }
+
+        document.querySelectorAll('.departmentColor').forEach(function (input) {
+            addAJAXDepartmentColor(input);
+        })
+        document.querySelectorAll('.signoff').forEach(function (input) {
+            addAJAXSignOff(input);
+        })
+
+        // Toon afdleingen toevoegen als je drukt op het plusje (+)
+        document.addEventListener('DOMContentLoaded', function() {
+            var showBtn = document.getElementById('showAddDepartment');
+            var addSection = document.getElementById('departmentManagement');
+            if (showBtn && addSection) {
+                showBtn.addEventListener('click', function() {
+                    addSection.style.display = addSection.style.display === 'none' ? 'block' : 'none';
+                });
+            }
+        });
+    </script>
+
+{% endblock %}

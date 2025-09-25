@@ -1,0 +1,1088 @@
+{% extends 'base.html.twig' %}
+{% block title %}Rooster inplannen{% endblock %}
+{% block head %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/admin_schedule_employee.css') }}"/>
+	 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+	.highlight-row {
+            background-color: yellow !important; /* or any color you prefer */
+		}
+	</style>
+{% endblock %}
+{% block body %}
+
+{% set trueWeek = "now"|date("W") %}
+{% set trueYear = "now"|date("Y") %}
+{% set notInPast = trueWeek <= weekNumber or trueYear < year %}
+{# checks if every schedule is published #}
+{% set published = true %}
+{% for schedule in schedules %}
+	{% if not schedule.published %}
+		{% set published = false %}
+	{% endif %}
+{% endfor %}
+<section class="p-3 main-content">
+		{% block headertitle %}
+			<h2 class="m-0 fs-2 mt-3 text-start custom_h2">Rooster inplannen</h2>
+		{% endblock %}
+	{# load of multiple variables #}
+	{% set days = {'monday': 'Maandag', 'tuesday': 'Dinsdag', 'wednesday': 'Woensdag', 'thursday': 'Donderdag', 'friday': 'Vrijdag'} %}
+	{% set timeSlots = {'morning': 'Ochtend', 'afternoon': 'Middag', 'whole_day': 'Hele dag' ,'different_timing': 'Afwijkende tijden'} %}
+	{% set types = {'basic': 'Basis', 'even': 'Even', 'odd': 'Oneven'} %}
+	{% set departments = settings.departments %}
+
+	{# different timimg popup #}
+	<div class='popup-overlay'></div>
+	<section class='edit-different_timing-popup'>
+		<div id="" class="w-100 different_timing_inputs">
+			<div class="input-group p-0 ">
+				<span class="input-group-text w-50 fs-7 ">Begin tijd:</span>
+				<input 
+					type="time"
+					class="form-control my-0 fs-7 w-50 py-3 form-check-input"
+					id='beginTijd'
+					aria-label="begin tijd">
+			</div>
+			<div class="input-group p-0">
+				<span class="input-group-text w-50 fs-7">Eind tijd:</span>
+				<input 
+					type="time"
+					class="form-control my-0 fs-7 py-3 w-50 form-check-input"
+					id ='eindTijd'
+					aria-label="eind tijd">
+			</div>
+			<div class="d-flex justify-content-center mt-3">
+                  <button type="button" class="btn btn-secondary fs-7 px-4" onclick="sluitPopup()">Annuleren</button>
+            </div>
+
+		</div>
+	</section>
+
+	<div id='toaster'></div>
+		<section id = 'Concept_selector' class = 'mb-2 p-2'>
+                <!-- Checkbox to toggle schedule visibility -->
+            <label>
+                <input type="checkbox" id="toggle-schedule-checkbox">
+                Laat ingeroosterd per afdeling zien
+            </label>
+            <!-- Div to display schedule, hidden by default -->
+
+        </section>
+		<div id="schedule-summary" style="display: none; margin-top: 10px;">
+            <!-- Placeholder for dynamically added content -->
+         
+            <section class="d-flex flex-row justify-content-between" id="schedule-summary-list"></section>
+		</div> 
+		<section >
+		<article class="d-flex flex-row justify-content-between p-1">
+		<div class="relative search-container" style="position: relative; width: 220px;">
+			<input type="text" id="searchInput" class="form-control w-100" placeholder="Zoek gebruiker..." style="padding-right: 32px;"/>
+			<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="gray" class="bi bi-search" viewBox="0 0 16 16"
+				style="position: absolute; right: 8px; transform: translateY(-50%); pointer-events: none; vertical-align: middle;">
+				<path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.442 1.398a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+			</svg>
+		</div>
+		<div class="saveButtons p-1">
+			{% if is_granted('ROLE_SUPERADMIN') %}
+				<button class="text-light text-decoration-none btn bg-color-sky-blue" onclick="sync_week('basis')" ><i class="bi bi-arrow-repeat"></i> Concept</button>
+			{% endif %}
+		</div>
+				<div class="saveButtons p-1">
+			<a class="text-light text-decoration-none btn bg-color-sky-blue" href="{{ path('create_employee') }}"><i class="bi bi-person-add"></i></a>
+			</div>
+
+			<div class="w-25 d-flex  ms-auto flex-column text-center justify-content-between rounded">
+				<div class="w-100 d-flex border border-2 flex-row justify-content-between rounded">
+				<div id="week-selector" class="d-flex flex-row justify-content-between align-items-end w-100">
+					<button type="button" id="prev-week" class="border border-0">
+						<i class="bi bi-arrow-left-short"></i>
+					</button>
+					<span id="el" class="d-flex align-items-center gap-2">
+						Week
+						<input type="number" id="week-input" min="1" max="53" value="{{ weekNumber }}" style="width: 60px;" />
+						van
+						<input type="number" id="year-input" min="2020" max="2100" value="{{ year }}" style="width: 80px;" />
+					</span>
+					<button type="button" id="next-week" class="border border-0">
+						<i class="bi bi-arrow-right-short"></i>
+					</button>
+				</div >
+			</div>
+			Per maandag {{ weekDates[0] }}
+		</article>
+		<table class="table">
+			<thead class="thead-dark">
+				<tr class="bg-light-subtle">
+					<th class="bg-light sticky-2">Afdeling</th>
+					<th>Maandag</th>
+					<th>Dinsdag</th>
+					<th>Woensdag</th>
+					<th>Donderdag</th>
+					<th>Vrijdag</th>
+				</tr>
+			</thead>
+			<tbody>
+    {% set departments_with_employees = [] %}
+{% for schedule in schedules %}
+    {% set dept = schedule.user.profile.department %}
+    {% if dept is not empty and dept not in departments_with_employees %}
+        {% set departments_with_employees = departments_with_employees | merge([dept]) %}
+    {% endif %}
+{% endfor %}
+
+{# Bepaal per afdeling of er medewerkers zijn #}
+{% set has_employees_per_department = {} %}
+{% for department in departments_with_employees %}
+    {% set has_employees_per_department = has_employees_per_department | merge({
+        (department): (schedules | filter(s => s.user.profile.department == department or s.user.profile.department is empty) | length > 0)
+    }) %}
+{% endfor %}
+
+{% for department in departments_with_employees | sort %}
+    <tr class="departmentRow border-end-1" data-department="{{ department }}" style="--bs-table-bg: {{ settings.departmentColor[department] }};">
+        <td class="py-2 sticky" colspan="6">
+            <button
+                class="accordion-button collapsed w-100 text-start d-flex align-items-center"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapse-{{ loop.index }}"
+                aria-expanded="false"
+                aria-controls="collapse-{{ loop.index }}"
+                style="position: relative;"
+                {% if not has_employees_per_department[department] %}disabled style="opacity:0.5; cursor:not-allowed; pointer-events:none;"{% endif %}
+            >
+                <span class="flex-grow-1">
+                    <strong class="colored" data-color='{{ settings.departmentColor[department] }}'>{{ department }}</strong>
+                </span>
+                <span class="department-chevron colored" data-color="{{ settings.departmentColor[department] }}" style="position: absolute; right: 24px; top: 50%; transform: translateY(-50%);">
+                    <i class="fa fa-chevron-down ms-2 icon-rotates"></i>
+                </span>
+            </button>
+        </td>
+    </tr>
+
+    <tr id="collapse-{{ loop.index }}" class="accordion-collapse collapse">
+        <td colspan="6">
+            <table class="table mb-0">
+                {% if has_employees_per_department[department] %}
+                    {% for schedule in schedules %}
+                        {% if schedule.user.profile.department == department or schedule.user.profile.department is empty %}
+                            <tr class='userRow basic border-end-1 highlight-{{ schedule.user.id }}' data-medewerker="{{schedule.user.profile.name}}" data-department="{{schedule.user.profile.department}}">
+                                <td class="py-2 sticky">
+                                    <a href="{{ path('profile_view', {'id': schedule.user.id}) }}" class="link-dark link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
+                                        {{ schedule.user.profile.name }}
+                                    </a>
+                                </td>
+                                {% for day, dutchDay in days %}
+                                    <td>
+                                        <!-- Dropdown voor afdelingen en tijdslots -->
+                                        <div class="d-flex align-items-center">
+                                            <!-- Dropdown voor afdelingen -->
+                                            <div class="position-relative w-100" style="display: flex; align-items: center;">
+                                                <select name="{{ day }}-department-select" id="{{ day }}-{{ schedule.user.id }}-department-selector"
+                                                    class="departmentSelector colored" 
+                                                    data-medewerker="{{ schedule.user.id }}"
+                                                    data-day="{{ day }}">
+                                                    {% set selected_department = schedule.scheduled.schedule[day].department | lower %}
+                                                    {% for department in departments | sort %}  
+                                                        {% set department_lower = department | lower %}
+                                                        <option data-color="{{ settings.departmentColor[department] }}" 
+                                                                style="background-color: {{ settings.departmentColor[department] }}" 
+                                                                value="{{ department }}" 
+                                                                {% if department_lower == selected_department %} selected {% endif %}>
+                                                            {{ department }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                    
+                                            </div>
+                                            <!-- Dropdown voor tijdslots -->
+                                            <select name="{{ day }}-select" id="{{ day }}-{{ schedule.user.id }}-state-selector"
+                                                class="state-selector"
+                                                data-medewerker="{{ schedule.user.id }}"
+                                                data-day="{{ day }}">
+                                                {% set currentSchedule = schedule.scheduled.schedule[day] %}
+                                                {% set selected_option = 
+                                                    currentSchedule["different_timing"]["scheduled"] ? "different_timing" :
+                                                    (currentSchedule["morning"]["scheduled"] and currentSchedule["afternoon"]["scheduled"]) ? "whole_day" :
+                                                    currentSchedule["afternoon"]["scheduled"] ? "afternoon" :
+                                                    currentSchedule["morning"]["scheduled"] ? "morning" : "none" %}
+                                                <option value="none" {% if selected_option == "none" %}selected{% endif %}>-</option>
+                                                <option value="morning" {% if selected_option == "morning" %}selected{% endif %}>Ochtend</option>
+                                                <option value="afternoon" {% if selected_option == "afternoon" %}selected{% endif %}>Middag</option>
+                                                <option value="whole_day" {% if selected_option == "whole_day" %}selected{% endif %}>Hele dag</option>
+                                                <option value="different_timing" {% if selected_option == "different_timing" %}selected{% endif %}>Afwijkende tijden</option>
+                                                {% if selected_option == "different_timing" %}
+                                                    <option value="{{ currentSchedule['different_timing']['scheduled'] }}" selected disabled>
+                                                        {{ currentSchedule['different_timing']['scheduled'] }}
+                                                    </option>
+                                                {% endif %}
+                                            </select>
+                                        </div>
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </table>
+        </td>
+    </tr>
+{% endfor %}
+</tbody>
+		</table>
+	</section>
+
+	<script src="{{ asset('js/textColoring.js')}}"></script>
+	<script>
+	const toggleCheckbox = document.getElementById('toggle-schedule-checkbox');
+	const scheduleSummaryDiv = document.getElementById('schedule-summary');
+	const scheduleSummaryList = document.getElementById('schedule-summary-list');
+	const allDepartments =  {{ settings.departments|json_encode|raw }};
+	const sortedDepartments = allDepartments.sort()
+	const percentageSize = 100 / allDepartments.length
+	let currentWeek = {{ weekNumber }};
+	let currentYear = {{ year }};
+	const departmentColors = {{ settings.departmentColor|json_encode|raw }};
+
+	// update the schedule summary
+	function updateScheduleSummary() {
+		const departmentCounts = { "monday": {}, "tuesday": {}, "wednesday": {}, "thursday": {}, "friday": {} };
+		for (const day in departmentCounts) {
+			for (const department of sortedDepartments) {
+				departmentCounts[day][department] = [0, 0];
+			}
+		}
+
+		document.querySelectorAll('.departmentSelector').forEach(function (selector) {
+			const day = selector.getAttribute('data-day');
+			const department = selector.value;
+			const id = selector.getAttribute("data-medewerker");
+			const linkedState = document.querySelector(`#${day}-${id}-state-selector`);
+
+			if (linkedState && linkedState.value !== "none") {
+				if (department) {
+					if (linkedState.value === "afternoon") {
+						departmentCounts[day][department][1] += 1;
+					} else if (linkedState.value === 'morning') {
+						departmentCounts[day][department][0] += 1;
+					} else if (linkedState.value === 'whole_day') {
+						departmentCounts[day][department][0] += 1;
+						departmentCounts[day][department][1] += 1;
+					} else if (linkedState.value.includes("-")) { // Check if it's a time range
+						const [start, end] = linkedState.value.split(" - ").map(time => {
+							const [hours, minutes] = time.split(":").map(Number);
+							return hours * 60 + minutes; // Convert time to minutes for easy comparison
+						});
+
+						if (start < 750) { // 12:30 PM in minutes
+							departmentCounts[day][department][0] += 1; // Increment morning count
+						}
+						if (end > 780) { // 13:00 PM in minutes
+							departmentCounts[day][department][1] += 1; // Increment afternoon count
+						}
+					}
+				}
+			}
+		});
+
+		scheduleSummaryList.innerHTML = '';
+		for (const day in departmentCounts) {
+			switch(day){
+				case "monday":
+					dayNL = "Maandag";
+					break;
+				case "tuesday":
+					dayNL = "Dinsdag";
+					break;
+				case "wednesday":
+					dayNL = "Woensdag";
+					break;
+				case "thursday":
+					dayNL = "Donderdag";
+					break;
+				case "friday":
+					dayNL = "Vrijdag";
+					break;
+				default:
+					dayNL = "er gaat iets fout" ;
+			}
+			const dayItem = document.createElement('article');
+			if(departmentCounts[day] && Object.keys(departmentCounts[day]).length === 0){
+				dayItem.classList.add("d-none");
+			}
+			dayItem.classList.add("p-2")
+			dayItem.classList.add("w-100")
+			dayItem.innerHTML = `<h5 class="m-0 px-1 d-flex flex-row justify-content-between" style="width:100%; background-color:#9f9f9f; color:white;"><span>${dayNL}</span><span>Ochtend</span><span>Middag</span></h5>`;
+
+			const departmentList = document.createElement('div');
+		     
+			departmentList.classList.add("d-flex");
+			departmentList.classList.add("flex-column");
+			for (const department in departmentCounts[day]) {
+				const departmentItem = document.createElement('div');
+				departmentItem.classList.add("d-flex");
+				departmentItem.classList.add("flex-column");
+				departmentItem.classList.add("border");
+				departmentItem.classList.add("border-dark");
+				departmentItem.classList.add("border-top-1");
+				departmentItem.classList.add("border-bottom-1");
+				departmentItem.style.width ="100%"
+				departmentItem.style.textAlign = "center";
+				departmentItem.innerHTML = `<h6 class = 'colored m-0 p-1 d-flex flex-row justify-content-between' data-color = ${departmentColors[department]} style="background-color:${departmentColors[department]}"<span>${getShortDepartment(department)}</span><span class="d-flex justify-content-between w-40"><span>${departmentCounts[day][department][0]}</span><span>${departmentCounts[day][department][1]}</span></span</h6>`;
+				itemToColor = departmentItem.querySelector("h6");
+				checkColors(itemToColor)
+
+				//departmentItem.style.color = departmentColors[department] || 'black';
+				departmentList.appendChild(departmentItem);
+
+			}
+
+			dayItem.appendChild(departmentList);
+			scheduleSummaryList.appendChild(dayItem);
+		}
+	}
+
+	// Toggle visibility of the schedule summary
+	toggleCheckbox.addEventListener('change', function () {
+		if (toggleCheckbox.checked) {
+			scheduleSummaryDiv.style.display = 'block';
+		} else {
+			scheduleSummaryDiv.style.display = 'none';
+		}
+	});
+
+	// Change the value of someone's department
+	document.querySelectorAll('.departmentSelector').forEach(function(selector){
+		let department = selector.value;
+		selector.style.backgroundColor = departmentColors[department] || 'transparent';
+		selector.setAttribute("data-color", departmentColors[department])
+		checkColors(selector);
+		Array.from(selector.options).forEach(function (option) {
+			option.classList.add("colored");
+			checkColors(option);
+		});
+		selector.addEventListener('change', function(){
+			let userId = selector.getAttribute('data-medewerker');
+			let day = selector.getAttribute('data-day');
+			let value = selector.value;
+			let payload = {
+				userId: userId,
+				day: day,
+				department: value,
+				week: currentWeek,
+				year: currentYear
+			};
+			fetch('{{ path("update_scheduled_department") }}', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				body: JSON.stringify(payload)
+				}).then(response => response.json()).then(data => {
+					if (!data.success) {
+						alert('Error saving department ' + data.success + ": " + data.message);
+					} else{
+						selector.style.backgroundColor = departmentColors[value] || 'transparent';
+						selector.setAttribute("data-color", departmentColors[value])
+						updateScheduleSummary();
+						checkColors(selector);
+					}
+				}).catch(error => {
+					console.error('Error:', error);
+				});
+			
+		});
+	});
+
+	// Sync concept to current week
+	function sync_week(type){
+		const week = {{ weekNumber }};
+		const year = {{ year }};
+		const payload = {
+			week: week,
+			year: year,
+			type: type
+		};
+		fetch('{{ path("sync_concept") }}', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-Requested-With': 'XMLHttpRequest'
+			},
+			body: JSON.stringify(payload)
+		})
+		.then(response => response.json())
+		.then(data => {
+			if (data.redirect) {
+				window.location.href = data.redirect;
+			}
+		})
+		.catch(error => {
+			console.error('Error:', error);
+		});
+	}
+
+	// Week Switchen
+	document.addEventListener('DOMContentLoaded', function () {
+		
+		updateScheduleSummary();
+		if (currentWeek == "33" && currentYear == "2024") {
+			document.getElementById('prev-week').setAttribute('disabled', true);
+		}
+	
+		function updateSchedule(week, year) { // Update the page URL and reload
+			if (week == "33" && year == "2024") {
+				document.getElementById('prev-week').setAttribute('disabled', true);
+				window.location.href = `{{ path('week_selector', { 'year': 'YEAR', 'weekNumber': 'WEEK'}) }}`.replace('YEAR', year).replace('WEEK', week);
+				return;
+			}
+			document.getElementById('prev-week').removeAttribute('disabled', false)
+			window.location.href = `{{ path('week_selector', { 'year': 'YEAR', 'weekNumber': 'WEEK'}) }}`.replace('YEAR', year).replace('WEEK', week);
+		}
+
+		function has53weeks(year) {
+			const first_day = new Date(year, 0, 1);
+			const first_day_number = first_day.getDay();
+			if (year % 4 == 0) { // leap year
+				return false
+			} else if (first_day_number == 4) { // ISO weeknumber starts when 
+				return true
+			} else {
+				return false
+			}
+				
+		}
+
+		document.getElementById('prev-week').addEventListener('click', function () { //Changes the weeknummer to be one lower than the current loaded weeknumber
+			currentWeek = {{ weekNumber }};
+			currentYear = {{ year }};
+			if (currentWeek > 1) {
+				currentWeek--;
+			} else {
+				currentYear--;
+				if (has53weeks(currentYear)) {
+					currentWeek = 53;
+				} else {
+					currentWeek = 52;
+				}
+				
+			} 
+			updateSchedule(currentWeek, currentYear);
+		});
+
+		document.getElementById('next-week').addEventListener('click', function () { //Changes the weeknummer to be one higher than the current loaded weeknumber
+			currentWeek = {{ weekNumber }};
+			currentYear = {{ year }};
+			if (has53weeks(currentYear)){
+				if (currentWeek < 53) {
+				currentWeek++;
+			} else {
+				currentWeek = 1;
+				currentYear++;
+			} 
+			} else {
+				if (currentWeek < 52) {
+					currentWeek++;
+				} else {
+					currentWeek = 1;
+					currentYear++;
+				} 
+			}
+			updateSchedule(currentWeek, currentYear);
+		});
+
+	   // Search functionality
+	   document.getElementById('searchInput').addEventListener('input', function () {
+       const inputText = this.value.trim();
+       // Splits op komma's
+       const selectedNames = inputText.length > 0 ? inputText.split(',').map(name => name.trim()).filter(name => name.length > 0): [];
+       const query = selectedNames.length > 0 ? selectedNames[selectedNames.length - 1].toLowerCase() : '';
+
+    autocompleteList.innerHTML = '';
+
+     if (query.length > 0) {
+        const filteredEmployees = employees.filter(employee =>
+            employee.name.toLowerCase().startsWith(query) ||
+            employee.firstName.toLowerCase().startsWith(query) ||
+            employee.lastName.toLowerCase().startsWith(query)
+        ).map(employee => employee.name);
+
+        [...new Set(filteredEmployees)].forEach(employeeName => {
+            const listItem = document.createElement('li');
+            listItem.classList.add('list-group-item');
+            listItem.textContent = employeeName;
+
+            listItem.addEventListener('click', function () {
+                selectedNames[selectedNames.length - 1] = employeeName;
+                searchInput.value = selectedNames.join(', ') + ', ';
+                autocompleteList.innerHTML = '';
+                autocompleteList.style.display = 'none';
+                searchInput.dispatchEvent(new Event('input'));
+            });
+
+            autocompleteList.appendChild(listItem);
+        });
+
+        // Toon de lijst
+        const rect = searchInput.getBoundingClientRect();
+        autocompleteList.style.position = 'absolute';
+        autocompleteList.style.top = `${searchInput.offsetTop + searchInput.offsetHeight}px`;
+autocompleteList.style.left = `${searchInput.offsetLeft}px`;
+autocompleteList.style.width = `${searchInput.offsetWidth}px`;
+        autocompleteList.style.display = 'block';
+    } else {
+        autocompleteList.style.display = 'none';
+    }
+
+    // Filter de tabel
+    updateTable(selectedNames);
+});
+
+
+	});
+
+	document.addEventListener('DOMContentLoaded', function () {
+		const urlParams = new URLSearchParams(window.location.search);
+		const highlightId = urlParams.get('highlight');
+	
+		if (highlightId) {
+			const elementToHighlight = document.querySelector(`.highlight-${highlightId}`);
+			if (elementToHighlight) {
+				elementToHighlight.classList.add('highlight-row');
+				elementToHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+				const parentRow = elementToHighlight.closest('.accordion-collapse');
+				if (parentRow && parentRow.classList.contains('collapse')) {
+					const button = document.querySelector(`[data-bs-target="#${parentRow.id}"]`);
+					if (button) {
+						button.classList.remove('collapsed');
+						parentRow.classList.add('show');
+					}
+				}
+			}
+		}
+	});
+
+	document.querySelectorAll('.departmentRow').forEach(row => {
+    row.style.backgroundColor = 'red';
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    let currentWeek = {{ weekNumber }};
+    let currentYear = {{ year }};
+
+    function updateSchedule(week, year) {
+        const url = `{{ path('week_selector', { 'year': 'YEAR', 'weekNumber': 'WEEK'}) }}`
+            .replace('YEAR', year)
+            .replace('WEEK', week);
+        window.location.href = url;
+    }
+
+    function has53weeks(year) {
+        const firstDay = new Date(year, 0, 1);
+        const firstDayNumber = firstDay.getDay();
+        return (year % 4 !== 0 && firstDayNumber === 4); // ISO-week 53 check
+    }
+
+    document.getElementById('prev-week').addEventListener('click', function () {
+        if (currentWeek > 1) {
+            currentWeek--;
+        } else {
+            currentYear--;
+            currentWeek = has53weeks(currentYear) ? 53 : 52;
+        }
+        updateSchedule(currentWeek, currentYear);
+    });
+
+    document.getElementById('next-week').addEventListener('click', function () {
+        if (has53weeks(currentYear) && currentWeek < 53) {
+            currentWeek++;
+        } else if (!has53weeks(currentYear) && currentWeek < 52) {
+            currentWeek++;
+        } else {
+            currentWeek = 1;
+            currentYear++;
+        }
+        updateSchedule(currentWeek, currentYear);
+    });
+});
+
+// zoek functie
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchInput');
+    const autocompleteList = document.createElement('ul');
+    autocompleteList.id = 'autocompleteList';
+    autocompleteList.classList.add('list-group', 'position-absolute', 'mt-2', 'w-100', 'z-3');
+    searchInput.parentNode.appendChild(autocompleteList);
+
+    const employees = Array.from(document.querySelectorAll('.userRow')).map(row => {
+    const fullName = row.getAttribute('data-medewerker');
+    const nameParts = fullName.split(' ');
+    return {
+        name: fullName,
+        firstName: nameParts[0],
+        lastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''
+    };
+});
+
+    searchInput.addEventListener('input', function () {
+        let inputText = this.value.trim();
+        let selectedNames = inputText.length > 0 ? inputText.split(',').map(name => name.trim()) : [];
+        let query = selectedNames.length > 0 ? selectedNames[selectedNames.length - 1].toLowerCase() : '';
+
+        autocompleteList.innerHTML = '';
+
+        if (query.length > 0) {
+            const filteredEmployees = employees.filter(employee =>
+                employee.name.toLowerCase().startsWith(query) ||
+                employee.firstName.toLowerCase().startsWith(query) ||
+                employee.lastName.toLowerCase().startsWith(query)
+            ).map(employee => employee.name);
+
+            [...new Set(filteredEmployees)].forEach(employeeName => {
+                const listItem = document.createElement('li');
+                listItem.classList.add('list-group-item');
+                listItem.textContent = employeeName;
+
+                listItem.addEventListener('click', function () {
+                    selectedNames[selectedNames.length - 1] = employeeName;
+                    searchInput.value = selectedNames.join(', ') + ', ';
+                    autocompleteList.innerHTML = '';
+                    autocompleteList.style.display = 'none';
+                    searchInput.dispatchEvent(new Event('input'));
+                });
+
+                autocompleteList.appendChild(listItem);
+            });
+
+            // Toon de lijst
+            const rect = searchInput.getBoundingClientRect();
+            autocompleteList.style.position = 'absolute';
+            autocompleteList.style.top = `${searchInput.offsetTop + searchInput.offsetHeight}px`;
+autocompleteList.style.left = `${searchInput.offsetLeft}px`;
+autocompleteList.style.width = `${searchInput.offsetWidth}px`;
+            autocompleteList.style.display = 'block';
+        } else {
+            autocompleteList.style.display = 'none';
+        }
+
+        // Filter de tabel
+        updateTable(selectedNames);
+    });
+
+    // Verberg de autocomplete lijst bij een klik buiten het zoekveld
+    document.addEventListener('click', function (event) {
+        if (!searchInput.contains(event.target) && !autocompleteList.contains(event.target)) {
+            autocompleteList.style.display = 'none';
+
+            let inputText = searchInput.value.trim();
+            let selectedNames = inputText.length > 0 ? inputText.split(',').map(name => name.trim()) : [];
+
+            updateTable(selectedNames);
+        }
+    });
+
+    function updateTable(selectedNames) {
+        const userRows = document.querySelectorAll('.userRow');
+        const accordionsToOpen = new Set();
+
+        const filteredNames = selectedNames
+            .map(name => name.trim())
+            .filter(name => name.length > 0);
+
+        if (filteredNames.length === 0) {
+            userRows.forEach(row => {
+                row.style.display = 'table-row';
+            });
+            document.querySelectorAll('.accordion-button').forEach(btn => {
+                btn.classList.add('collapsed');
+            });
+            return;
+        }
+
+        userRows.forEach(row => {
+            const username = row.getAttribute('data-medewerker');
+            const nameParts = username.split(' ');
+            const firstName = nameParts[0];
+            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+            const parentAccordion = row.closest('.accordion-collapse');
+            const allParts = nameParts.map(part => part.toLowerCase());
+            const match = filteredNames.some(name =>
+                username.toLowerCase() === name.toLowerCase() ||
+                firstName.toLowerCase() === name.toLowerCase() ||
+                lastName.toLowerCase() === name.toLowerCase() ||
+                allParts.includes(name.toLowerCase())
+            );
+            if (match) {
+                row.style.display = 'table-row';
+                if (parentAccordion) {
+                    accordionsToOpen.add(parentAccordion.id);
+                }
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        accordionsToOpen.forEach(accId => {
+            const acc = document.getElementById(accId);
+            if (acc) {
+                acc.classList.add('show');
+                const btn = document.querySelector(`[data-bs-target="#${accId}"]`);
+                if (btn) {
+                    btn.classList.remove('collapsed');
+                }
+            }
+        });
+        document.querySelectorAll('.accordion-button').forEach(btn => {
+            const target = btn.getAttribute('data-bs-target');
+            if (target && !accordionsToOpen.has(target.replace('#', ''))) {
+                btn.classList.add('collapsed');
+            }
+        });
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+
+	const differentTimingOverlay = document.querySelector('.popup-overlay');
+	const differentTimingPopup = document.querySelector('.edit-different_timing-popup');
+	const beginTijd = document.querySelector('#beginTijd');
+	const eindTijd = document.querySelector('#eindTijd');
+	let popup_id;
+	let popup_type;
+	let popup_day;
+
+	function checkPopup(){
+		if (beginTijd.value !== "" && eindTijd.length !== "" ){
+			if(beginTijd.value < eindTijd.value){
+				return true
+			}
+		}
+		return false
+	}
+
+	function openPopup(){
+			beginTijd.style.borderColor = '#dee2e6';
+			eindTijd.style.borderColor = '#dee2e6';
+			differentTimingPopup.style.display = 'block';
+			differentTimingOverlay.style.display = 'block';
+		}
+
+		function closePopup(){
+			if (checkPopup()) {
+				differentTimingPopup.style.display = 'none';
+				differentTimingOverlay.style.display = 'none';
+				let popupTijd = `${beginTijd.value} - ${eindTijd.value}`;
+				let payload = {
+					userId: popup_id,
+					day: popup_day,
+					value: popupTijd,
+					different: true,
+					week: currentWeek,
+					year: currentYear
+				};
+				console.log(payload)
+				fetch('{{ path("update_scheduled_user") }}', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-Requested-With': 'XMLHttpRequest'
+					},
+					body: JSON.stringify(payload)
+				})
+				.then(response => response.json())
+				.then(data => {
+					updateScheduleSummary();
+					const selectElement = document.querySelector(`#${popup_day}-${popup_id}-state-selector`);
+					const newOption = document.createElement('option');
+					newOption.value = "new";
+					newOption.text = popupTijd;
+					selectElement.appendChild(newOption);
+					selectElement.value = "new";
+					newOption.disabled = true;
+					beginTijd.value = "";
+					eindTijd.value = "";
+					popup_id = '';
+					popup_type = '';
+					popup_day = '';
+				})	
+				.catch(error => {
+					console.error('Error:', error)
+				})
+			} else{
+				beginTijd.style.borderColor = 'red';
+				eindTijd.style.borderColor = 'red';
+			}
+		}
+
+		differentTimingOverlay.addEventListener('click', function (event){
+			event.stopPropagation();
+			closePopup();
+		})
+
+
+
+    // Update de afdeling en tijdslot
+    document.querySelectorAll('.departmentSelector').forEach(function (selector) {
+        let department = selector.value;
+        selector.style.backgroundColor = departmentColors[department] || 'transparent';
+        selector.setAttribute("data-color", departmentColors[department]);
+
+        // Voeg event listener toe voor wijzigingen
+        selector.addEventListener('change', function () {
+            let userId = selector.getAttribute('data-medewerker');
+            let day = selector.getAttribute('data-day');
+            let value = selector.value;
+
+            // Payload voor de fetch-aanroep
+            let payload = {
+                userId: userId,
+                day: day,
+                department: value,
+                week: currentWeek,
+                year: currentYear
+            };
+
+            // Verstuur de wijziging naar de server
+            fetch('{{ path("update_scheduled_department") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('Error bij het opslaan van de afdeling: ' + data.message);
+                } else {
+                    selector.style.backgroundColor = departmentColors[value] || 'transparent';
+                    selector.setAttribute("data-color", departmentColors[value]);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+
+    // Update de tijdslot
+    document.querySelectorAll('.state-selector').forEach(function (selector) {
+        selector.addEventListener('change', function () {
+			let userId = selector.getAttribute('data-medewerker');
+			let day = selector.getAttribute('data-day');
+			let value = selector.value;
+			let different = false; 
+			if (value == 'different_timing'){
+				openPopup();
+				popup_id = userId;
+				popup_type = day;
+				popup_day = day;
+			}
+			else {
+				let payload = {
+					userId: userId,
+					day: day,
+					value: value === 'none' ? null : value, // Send null for "-"
+					different: different,
+					week: currentWeek,
+					year: currentYear
+				};
+				fetch('{{ path("update_scheduled_user") }}', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-Requested-With': 'XMLHttpRequest'
+					},
+					body: JSON.stringify(payload)
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (!data.success) {
+						alert('Error updating schedule: ' + data.message);
+					} else {
+						selector.value = value; // Ensure the UI reflects the change
+						updateScheduleSummary();
+					}
+				})
+				.catch(error => {
+					console.error('Error:', error);
+				});
+			}
+        });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Update de achtergrondkleur van de geselecteerde afdeling
+    document.querySelectorAll('.departmentSelector').forEach(function (selector) {
+        function updateBackgroundColor() {
+            const selectedOption = selector.options[selector.selectedIndex];
+            const color = selectedOption.getAttribute('data-color');
+            selector.style.backgroundColor = color || 'transparent';
+        }
+
+        // Stel de achtergrondkleur in bij het laden van de pagina
+        updateBackgroundColor();
+
+        // Voeg een event listener toe om de achtergrondkleur bij te werken bij wijzigingen
+        selector.addEventListener('change', updateBackgroundColor);
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Update de achtergrondkleur en tekstkleur van de geselecteerde afdeling
+    document.querySelectorAll('.departmentSelector').forEach(function (selector) {
+        function updateStyles() {
+            const selectedOption = selector.options[selector.selectedIndex];
+            const color = selectedOption.getAttribute('data-color');
+            selector.style.backgroundColor = color || 'transparent';
+
+            // Stel de tekstkleur in op wit als er een achtergrondkleur is, anders zwart
+            selector.style.color = color ? 'white' : 'black';
+        }
+
+        // Stel de achtergrond- en tekstkleur in bij het laden van de pagina
+        updateStyles();
+
+        // Voeg een event listener toe om de stijlen bij te werken bij wijzigingen
+        selector.addEventListener('change', updateStyles);
+    });
+});
+
+  // Functie voor de annuleer knop
+  function sluitPopup() {
+        document.querySelector('.popup-overlay').style.display = 'none';
+        document.querySelector('.edit-different_timing-popup').style.display = 'none';
+    }
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.departmentColor').forEach(function(input) {
+        input.addEventListener('input', function() {
+            var key = input.getAttribute('id').replace('color-', '');
+            document.querySelectorAll('.department-chevron').forEach(function(span) {
+                if (span.previousElementSibling && span.previousElementSibling.querySelector('strong') && span.previousElementSibling.querySelector('strong').textContent.trim() === key) {
+                    span.setAttribute('data-color', input.value);
+                    checkColors(span);
+                }
+            });
+        });
+    });
+});
+
+// Voorkom dat de afdeling dropdown sluit als je op de tijd selector klikt
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.state-selector').forEach(function(selector) {
+        selector.addEventListener('mousedown', function(event) {
+            event.stopPropagation();
+        });
+        selector.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+    });
+    // Voorkom dat de accordion sluit als je op de afdeling selector klikt
+    document.querySelectorAll('.departmentSelector').forEach(function(selector) {
+        selector.addEventListener('mousedown', function(event) {
+            event.stopPropagation();
+        });
+        selector.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+    });
+});
+
+// functie getShortDepartment die ervoor zorgt dat de afdelingen korter worden weergegeven in de popup
+function getShortDepartment(department) {
+    switch (department) {
+		case 'Algemeen': return 'Alg';
+		case 'Refurbishment': return 'Ref';
+		case 'Beheer': return 'Beh';
+		case 'Magazijn': return 'Mgz';
+		case '3e leerweg': return 'Opl';
+		case 'Reparatie': return 'Rep';
+		case 'Pre-wipe': return 'Wpe';
+		case 'Sales': return 'Sal';
+		case 'Zaandam': return 'Znd';
+		case 'Ophaalservice': return 'Rit';
+		case 'Softpool': return 'Sof';
+		case 'Meedraaien': return 'Mdr';
+		case 'Project': return 'Prt';
+
+	    default: return department.slice(0, 3);
+    }
+}
+
+// rotate functie voor dropdown icons
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.accordion-button').forEach(function(button) {
+        const chevron = button.querySelector('.icon-rotates');
+        const targetId = button.getAttribute('data-bs-target');
+        const collapse = document.querySelector(targetId);
+
+        if (collapse && collapse.classList.contains('show')) {
+            chevron.style.transform = 'rotate(180deg)';
+        } else {
+            chevron.style.transform = '';
+        }
+
+        if (collapse) {
+            collapse.addEventListener('show.bs.collapse', function () {
+                chevron.style.transform = 'rotate(180deg)';
+            });
+            collapse.addEventListener('hide.bs.collapse', function () {
+                chevron.style.transform = '';
+            });
+        }
+    });
+});
+document.addEventListener('DOMContentLoaded', function () {
+    const weekInput = document.getElementById('week-input');
+    const yearInput = document.getElementById('year-input');
+    const goToWeekBtn = document.getElementById('go-to-week');
+
+    if (goToWeekBtn) {
+        goToWeekBtn.addEventListener('click', function () {
+            let week = parseInt(weekInput.value, 10);
+            let year = parseInt(yearInput.value, 10);
+            if (week >= 1 && week <= 53 && year >= 2020 && year <= 2100) {
+                const url = `{{ path('week_selector', { 'year': 'YEAR', 'weekNumber': 'WEEK'}) }}`
+                    .replace('YEAR', year)
+                    .replace('WEEK', week);
+                window.location.href = url;
+            } else {
+                alert('Voer een geldige week (1-53) en jaar in.');
+            }
+        });
+    }
+});
+
+
+// Voeg toe onderaan je <script> blok:
+document.addEventListener('DOMContentLoaded', function () {
+    const weekInput = document.getElementById('week-input');
+    const yearInput = document.getElementById('year-input');
+
+    function goToSelectedWeek() {
+        let week = parseInt(weekInput.value, 10);
+        let year = parseInt(yearInput.value, 10);
+        if (week >= 1 && week <= 53 && year >= 2020 && year <= 2100) {
+            const url = `{{ path('week_selector', { 'year': 'YEAR', 'weekNumber': 'WEEK'}) }}`
+                .replace('YEAR', year)
+                .replace('WEEK', week);
+            window.location.href = url;
+        }
+    }
+
+    weekInput.addEventListener('change', goToSelectedWeek);
+    yearInput.addEventListener('change', goToSelectedWeek);
+});
+</script>
+
+{% endblock %}
+
+
+

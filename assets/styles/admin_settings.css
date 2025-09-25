@@ -1,0 +1,140 @@
+button, input, optgroup, select, textarea{
+    font-family: inherit;
+}
+
+.settings_main{
+    padding-top: 20px;
+}
+
+.accordion-button {
+    border: none; 
+    outline: none; 
+    box-shadow: none; 
+    color: #0E6281;
+}
+
+.form-control{
+    max-width: 40%;
+}
+
+#Department .d-flex {
+    align-items: center; 
+    /* justify-content: space-between;  */
+}
+
+#Department input[type="color"] {
+    width: 50px; 
+    margin-right: 10px;
+}
+
+#Department label {
+    flex: 1; 
+    margin-right: 10px;
+}
+
+#Department input.form-control {
+    max-width: none;
+    margin-right: 10px;
+}
+
+#Department button {
+    flex: 0; 
+    width: auto; 
+}
+
+.custom_logo{
+    width: 100%;
+    max-width: 200px;
+    max-height: 200px; 
+}
+
+.custom_background{
+    width: 100%;
+    max-width: 320px;
+    max-height: 320px; 
+}	
+
+.custom_h2 {
+    color: #0e6281 !important;
+    font-size: 3rem !important;
+    font-weight: 700 !important;
+  }
+
+.accordion-body {
+    padding-left: 0% !important;
+    padding-right: 0% !important;
+}
+
+.department-max-input {
+    width: 120px;
+    min-width: 80px !important;
+    max-width: 120px;
+    box-sizing: border-box;
+    margin-right: 10px;
+}
+
+@media (max-width: 992px) {
+    .department-max-input {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        margin-right: 0;
+    }
+}
+
+
+#departmentAddMax, #depatmentMax {
+    max-width: unset;
+}
+
+@media (max-width: 780px) {
+    #departmentAddMax.form-control {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+}
+
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background-color: #0e6281; 
+    border-radius: 5px; 
+    padding: 5px 10px; 
+    width: 250px; 
+    max-width: 100%;
+}
+
+@media (max-width: 500px) {
+    .search-container {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+.search-input {
+    border: none; 
+    background: none; 
+    color: white; 
+    font-size: 16px; 
+    padding-left: 10px; 
+    outline: none; 
+    width: 100%; 
+}
+
+.search-input::placeholder {
+  color: white; 
+}
+
+.search-container:hover > svg,
+.search-container:hover > .search-input::placeholder
+{
+  color:#7ED957;
+  fill: #7ED957;
+}
+svg {
+  fill: white; 
+}
+
+

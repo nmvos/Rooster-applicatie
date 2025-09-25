@@ -1,0 +1,90 @@
+/* main {
+  height: 100vh;
+} */
+
+body {
+  background-image: url('../uploads/background/background.jpg');  
+  background-size: cover; 
+  background-position: center; 
+  background-repeat: no-repeat; 
+  min-height: 100vh; 
+}
+
+:root {
+  --backgroundColor: transparent !important;
+}
+
+h1{
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #006633;
+  display: flex;
+  justify-content: center;
+}
+
+.section_reset{
+  padding: 20px !important;
+  height: 50%;
+}
+
+label{
+    display: block;
+    text-align: left;
+    color: #006633;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+input[type="text"], input[type="password"] {
+width: 100%;
+padding: 15px;
+margin-bottom: 20px;
+border: 1px solid #ccc;
+border-radius: 4px;
+box-sizing: border-box;
+}
+
+.btn{
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  text-align: center;
+  display: inline-block;
+  font-size: 16px;
+  margin: 10px 0;
+  cursor: pointer;
+  border-radius: 4px;
+  width: 100%;
+  background-color: #0E6281 !important;
+}
+
+main.sideOpen{
+  width: 95%!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+.alert.alert-error{
+  margin-left: 23%;
+}
+
+section{
+ margin-top: 20%;
+ overflow: hidden !important;
+ margin-left: 20%;
+}
+
+.alert {
+  padding: 15px;
+  background-color: #f44336;
+  color: white;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+.w-65 {
+  width: 40% !important;
+  max-width: 500px;   
+  min-width: 250px;
+  margin-left: auto;
+  margin-right: auto;
+}

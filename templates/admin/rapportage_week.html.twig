@@ -1,0 +1,814 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Rapporten
+{% endblock %}
+
+{% block head %}
+	{{ parent() }}
+	<link rel="stylesheet" href="{{ asset('styles/admin_rapportage.css') }}"/>
+	<style>
+		/* Add horizontal scroll for the table if the class is present */
+		.table-scrollable {
+			overflow-y: auto;
+			height: 500px;
+			border: 2px solid #0e6281;
+		}
+
+		.scroll-x{
+			overflow-x: auto;
+		}
+
+		/* Ensure the table takes full width */
+		.table {}
+		thead th {
+			position: sticky;
+			top: 0;
+		}
+		.pie {
+			width: 200px;
+			height: 200px;
+			margin: 0 auto;
+			border-radius: 50%;
+			position: relative;
+			background: conic-gradient({{settings.colors["Aanwezig"]}} 0% 0%, {{settings.colors["Ziek"]}} 0% 0%, {{settings.colors["Afwezig"]}} 0% 0%, {{settings.colors["Niet verwacht"]}} 0% 0%, #dee2e6 0% 100%, {{settings.colors["Geen registratie"]}} 0% 0%);
+		}
+		.pie-text {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 1.2em;
+			color: #000;
+		}
+		ul#autocompleteList > li {
+			cursor: pointer;
+		}
+	</style>
+{% endblock %}
+
+{% block body %}
+	<section class="mt-6 main-content">
+			{% block headertitle %}
+                <h2 class="m-0 fs-2 mt-3 text-black custom_h2">Week rapportage</h2>
+            {% endblock %}
+		<article class="d-flex flex-row justify-content-between bg-light">
+			<div class="input-group w-30">
+					 <div class="relative search-container">
+     				<input type="text" id="searchInput" placeholder="Zoeken medewerker..." class="search-input">
+      				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+        			<path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.442 1.398a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+      				</svg>
+    				</div>
+				<ul id="autocompleteList" class="list-group position-absolute mt-5 w-100 z-3"></ul>
+				<select name="departmentSelector" id="departmentSelector" class="w-10 ms-1 form-select rounded">
+					<option value="" disabled selected hidden>Kies een afdeling...</option>
+					<option value="All">Alle afdelingen</option>
+                {% for department in settings.departments | sort %}
+                    <option value="{{department}}">{{department}}</option>
+                {% endfor %}
+                </select>
+			</div>
+			<div class="w-50 d-flex flex-row justify-content-end">
+
+				<select id="selectWeek" name="selectWeek" class="w-20 me-1 form-select rounded"></select>
+				<select id="selectYear" name="selectYear" class="w-15 me-1 form-select rounded"></select>
+				<a href="{{ path('year_rapportage', { 'year': currentYear }) }}" class="btn me-1 bg-color-sky-blue">
+        			Jaaroverzicht
+    			</a>
+                <a href="{{ path('rapportage') }}" class="btn bg-color-sky-blue">
+        			Maandoverzicht
+    			</a>
+			<div>
+		</article>
+		{# Determine if the number of userSchedules exceeds 10 #}
+		{% set isScrollable = userSchedules|length > 5 %}
+
+		<section class="{% if isScrollable %}table-scrollable{% endif %} scroll-x">
+			<table class="table table-hover">
+				<thead class="thead-dark ">
+					<tr class="bg-light-subtle">
+						<th class="bg-light sticky-2">Medewerker</th>
+						{% for date in weekDates %}
+							<th class="bg-light">{{ date }}</th>
+						{% endfor %}
+					</tr>
+				</thead>
+				{% set currentDate = "now"|date('d-m-Y') %}
+				{% set currentTime = "now"|date('H') %}
+                {% set currentDayOfWeek = "now"|date('N') %}
+				{# Haal het uur op in 24-uurs formaat #}
+
+				<tbody>
+					{% for userSchedule in userSchedules %}
+
+						<tr class='userRow ' data-medewerker="{{userSchedule.user.profile.name}}" data-department="{{ userSchedule.user.profile.department }}">
+							<td class="py-2 sticky"><a href="{{ path('profile_view', {'id': userSchedule.user.id}) }}" class="link-dark link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">{{ userSchedule.user.profile.name }}</a></td>
+							{% for date in weekDates %}
+								{% set dayStatus = userSchedule.days[date] ?? null %}
+								{% set fullDateString = date ~ '-' ~ currentYear %}
+								{% set dateObject = fullDateString|date('d-m-Y') %}
+								{% set dayOfWeek = dateObject|date('N') %}
+
+								{% if dayStatus is null or dayStatus == "Niet ingeroosterd" %}
+									{% if dayOfWeek in [6, 7] %}
+										<td class='bg-secondary bg-gradient'></td>
+									{% else %}
+										<td>-</td>
+									{% endif %}
+								{% else %}
+									{% if dayStatus == "Aanwezig" %}
+										<td class='colored fs15' data-color="{{settings.colors['Aanwezig']}}" data-aantal data-aantal-persoon="{{userSchedule.user.profile.name}}" data-aanwezig-persoon="{{userSchedule.user.profile.name}}" data-aanwezig-aantal style="background-color:{{settings.colors['Aanwezig']}}">Aanwezig</td>
+									{% elseif dayStatus == "Niet verwacht" %}
+										<td class='colored fs15' data-color="{{settings.colors['Niet verwacht']}}" data-aantal data-aantal-persoon="{{userSchedule.user.profile.name}}" data-aanwezig-aantal data-nv-persoon="{{userSchedule.user.profile.name}}" data-nv-aantal style="background-color:{{settings.colors['Niet verwacht']}}">Niet verwacht</td>
+									{% elseif dayStatus == "Ziek" %}
+										<td class='colored fs15' data-color="{{settings.colors['Ziek']}}" data-aantal data-aantal-persoon="{{userSchedule.user.profile.name}}" data-ziek-persoon="{{userSchedule.user.profile.name}}" data-ziek-aantal style="background-color:{{settings.colors['Ziek']}}">Ziek</td>
+									{% elseif dayStatus == "Afwezig" %}
+										<td class='colored fs15' data-color="{{settings.colors['Afwezig']}}" data-aantal data-aantal-persoon="{{userSchedule.user.profile.name}}" data-afwezig-persoon="{{userSchedule.user.profile.name}}" data-afwezig-aantal style="background-color:{{settings.colors['Afwezig']}}">Afwezig</td>
+									{% elseif dayStatus == "Vrij" %}
+										<td class='colored fs15' data-color="{{settings.colors['Vrij']}}" style="background-color:{{settings.colors['Vrij']}}">Vrij</td>
+									{% elseif dayStatus == "Eerder weg" %}
+										<td class='colored fs15' data-color="{{settings.colors['Eerder weg']}}" data-aantal data-aantal-persoon="{{userSchedule.user.profile.name}}" data-eerder-weg-persoon="{{userSchedule.user.profile.name}}" data-eerder-weg-aantal style="background-color:{{settings.colors['Eerder weg']}}">Eerder weg</td>
+									{% elseif dayStatus == "Thuiswerken" %}
+										<td class='colored fs15' data-color="{{settings.colors['Thuiswerken']}}" data-aantal data-aantal-persoon="{{userSchedule.user.profile.name}}" data-thuiswerken-persoon="{{userSchedule.user.profile.name}}" data-thuiswerken-aantal style="background-color:{{settings.colors['Thuiswerken']}}">t.w.</td>	
+									{% elseif dayStatus == "?" %}
+										{% if not future and currentDayOfWeek >= dayOfWeek or past %}
+											{% if dateObject == currentDate and currentTime < 15 or dateObject < currentDate or past %}
+												<td class='colored fs15' data-color="{{settings.colors['Geen registratie']}}" data-aantal data-aantal-persoon="{{userSchedule.user.profile.name}}" data-niet-geregisteerd style="background-color:{{settings.colors['Geen registratie']}}"><i class="bi bi-question"></i></td>
+											{% else %}
+												<td><i class="bi bi-check"></i></td>
+											{% endif %}
+										{% else %}
+											<td><i class="bi bi-check"></i></td>
+										{% endif %}
+									{% elseif dayStatus =="Te laat"%}
+										<td class='colored fs15' data-color="{{settings.colors['Te laat']}}" data-aantal data-aantal-persoon="{{userSchedule.user.profile.name}}" data-te-laat-persoon="{{userSchedule.user.profile.name}}" data-aanwezig-aantal data-te-laat-aantal style="background-color:{{settings.colors['Te laat']}}">Te laat</td>
+									{% else %}
+										<td>{{ dayStatus }}</td>
+									{% endif %}
+								{% endif %}
+							{% endfor %}
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</section>
+
+		<section class="w-100 p-3 mt-3">
+			<div id="pies" class="row p-0 m-0 gy-2"></div>
+		</section>
+
+	</section>
+	<script src="{{ asset('js/textColoring.js')}}"></script>
+	<script>
+		// Render de `userSchedules` data in een JavaScript array
+		const userSchedules = [
+			{% for userSchedule in userSchedules %}
+			{
+				name: "{{ userSchedule.user.profile.name }}",
+				department: "{{ userSchedule.user.profile.department }}"
+			}{% if not loop.last %},{% endif %}
+			{% endfor %}
+		];
+
+        
+					
+		// Vind de input
+		var searchInput = document.getElementById('searchInput');
+		// Maak de autocomplete list dynamisch aan en plaats hem direct onder de zoekbalk
+		var autocompleteList = document.createElement('ul');
+		autocompleteList.id = 'autocompleteList';
+		autocompleteList.className = 'list-group position-absolute mt-2 w-100 z-3';
+		searchInput.parentNode.appendChild(autocompleteList);
+
+		// Initialiseer een lijst van namen (exacte namen)
+		const employees = [
+			{% for userSchedule in userSchedules %}
+				`{{ userSchedule.user.profile.name }}`{% if not loop.last %},{% endif %}
+			{% endfor %}
+		];
+
+		searchInput.addEventListener('input', function () {
+			let inputText = this.value.trim();
+			const selectedNames = inputText.length > 0 ? inputText.split(',').map(name => name.trim()).filter(name => name.length > 0) : [];
+			const query = selectedNames.length > 0 ? selectedNames[selectedNames.length - 1].toLowerCase() : '';
+
+			autocompleteList.innerHTML = '';
+
+			if (query.length > 0) {
+	   			const filteredEmployees = employees.filter(employee =>
+                employee.toLowerCase().includes(query)
+				);
+
+				if (filteredEmployees.length > 0) {
+					filteredEmployees.forEach(employee => {
+						const listItem = document.createElement('li');
+						listItem.classList.add('list-group-item', 'z-4');
+						listItem.textContent = employee;
+
+						listItem.addEventListener('click', function () {
+							// Vervang de laatste ingevoerde naam met de geselecteerde naam
+							selectedNames[selectedNames.length - 1] = employee;
+							searchInput.value = selectedNames.join(', ') + ', ';
+							autocompleteList.innerHTML = '';
+							autocompleteList.style.display = 'none';
+							searchInput.dispatchEvent(new Event('input'));
+						});
+
+						autocompleteList.appendChild(listItem);
+					});
+
+					const rect = searchInput.getBoundingClientRect();
+					autocompleteList.style.position = 'absolute';
+					autocompleteList.style.top = `${searchInput.offsetTop + searchInput.offsetHeight}px`;
+					autocompleteList.style.left = `${searchInput.offsetLeft}px`;
+					autocompleteList.style.width = `${searchInput.offsetWidth}px`;
+					autocompleteList.style.display = 'block';
+				} else {
+					autocompleteList.style.display = 'none';
+				}
+			} else {
+				autocompleteList.style.display = 'none';
+			}
+
+			updateTable(selectedNames);
+		});
+
+		document.addEventListener('click', function (event) {
+			if (!searchInput.contains(event.target) && !autocompleteList.contains(event.target)) {
+				autocompleteList.style.display = 'none';
+
+				let inputText = searchInput.value.trim();
+				let selectedNames = inputText.length > 0 ? inputText.split(',').map(name => name.trim()).filter(name => name.length > 0) : [];
+
+				updateTable(selectedNames);
+			}
+		});
+
+		function updateTable(selectedNames) {
+			const userRows = document.querySelectorAll('.userRow');
+			const filteredNames = selectedNames
+				.map(name => name.trim())
+				.filter(name => name.length > 0);
+
+			if (filteredNames.length === 0) {
+				userRows.forEach(row => {
+					row.style.display = 'table-row';
+				});
+				resetPie();
+				return;
+			}
+
+			userRows.forEach(row => {
+				const username = row.getAttribute('data-medewerker');
+				const match = filteredNames.some(filterName =>
+                    username.toLowerCase().includes(filterName.toLowerCase())
+                );
+                if (match) {
+                    row.style.display = 'table-row';
+                } else {
+                    row.style.display = 'none';
+                }
+			});
+
+			const matchedNames = employees.filter(emp =>
+				filteredNames.some(filterName =>
+					emp.toLowerCase().includes(filterName.toLowerCase())
+				)
+			);
+			updatePies(matchedNames);
+		}
+
+		function updatePies(selectedNames) {
+    pieContainer.innerHTML = '';
+    let aantalZiekte = 0;
+    let aantalNietGeregistreerd = 0;
+    let aantalNietVerwacht = 0;
+    let aantalDiensten = 0;
+    let aantalAanwezig = 0;
+    let aantalAfwezig = 0;
+    let aantalTeLaat = 0;
+	let aantalEerderWeg = 0;
+	let aantalThuiswerken = 0;
+
+    selectedNames.forEach(name => {
+        let alleDagenMedewerker = document.querySelectorAll(`td[data-aantal-persoon="${name}"]`);
+        alleDagenMedewerker.forEach(function (dag) {
+            var ziekte = dag.getAttribute("data-ziek-aantal");
+            var nietGeregistreerd = dag.getAttribute("data-niet-geregisteerd");
+            var nietVerwacht = dag.getAttribute("data-nv-aantal");
+            var aanwezig = dag.getAttribute("data-aanwezig-aantal");
+            var afwezig = dag.getAttribute("data-afwezig-aantal");
+            var teLaat = dag.getAttribute("data-te-laat-aantal");
+			var eerderWeg = dag.getAttribute("data-eerder-weg-aantal"); 
+			var Thuiswerken = dag.getAttribute("data-thuiswerken-aantal"); 
+
+            if (ziekte != null) {
+                aantalZiekte++;
+            }
+            if (nietGeregistreerd != null) {
+                aantalNietGeregistreerd++;
+            }
+            if (nietVerwacht != null) {
+                aantalNietVerwacht++;
+            }
+            if (aanwezig != null) {
+                aantalAanwezig++;
+            }
+            if (afwezig != null) {
+                aantalAfwezig++;
+            }
+            if (teLaat != null) {
+                aantalTeLaat++;
+            }
+			if (eerderWeg != null) { 
+                aantalEerderWeg++;
+            }
+			if (Thuiswerken != null) { 
+                aantalThuiswerken++;
+            }
+            aantalDiensten++;
+        });
+    });
+
+    let percentageNietGeregistreerd = aantalNietGeregistreerd / aantalDiensten * 100;
+    let percentageNietVerwacht = aantalNietVerwacht / aantalDiensten * 100;
+    let percentageZiek = aantalZiekte / aantalDiensten * 100;
+    let percentageAanwezig = (aantalAanwezig + aantalEerderWeg + aantalMedewerkerThuiswerken) / aantalDiensten * 100;
+    let percentageAfwezig = aantalAfwezig / aantalDiensten * 100;
+    let percentageTeLaat = aantalTeLaat / aantalDiensten * 100;
+	let percentageEerderWeg = aantalEerderWeg / aantalDiensten * 100; 
+	let percentageThuiswerken = aantalThuiswerken / aantalDiensten * 100; 
+
+    createPie("Aanwezig", "aanwezig", `{{settings.colors['Aanwezig']}}`, percentageAanwezig);
+    createPie("Te laat", "teLaat", `{{settings.colors['Te laat']}}`, percentageTeLaat);
+    createPie("Afwezig", "afwezig", `{{settings.colors['Afwezig']}}`, percentageAfwezig);
+    createPie("Ziek", "ziek", `{{settings.colors['Ziek']}}`, percentageZiek);
+    createPie("Geen registratie", "nietGeregistreerd", `{{settings.colors['Geen registratie']}}`, percentageNietGeregistreerd);
+    createPie("Niet verwachte diensten", "nietVerwacht", `{{settings.colors['Niet verwacht']}}`, percentageNietVerwacht);
+	createPie("Eerder weg", "eerderWeg", `{{settings.colors['Eerder weg']}}`, percentageEerderWeg); 
+	createPie("Thuiswerken", "thuiswerken", `{{settings.colors['Thuiswerken']}}`, percentageThuiswerken); 
+}
+
+				
+		// Referenties naar de select elementen
+		const selectYear = document.getElementById('selectYear');
+		const selectWeek = document.getElementById('selectWeek');	
+
+		var pieContainer = document.querySelector("#pies");
+							
+		function createPie(titel, id, color, percentage){
+			var container = document.createElement("div");
+			var heading = document.createElement("h4");
+			var pieCircle = document.createElement("div");
+			var pieText = document.createElement("div");
+
+			container.className = "col p-0 mx-1";
+			heading.className = "text-center";
+			pieCircle.className = "pie";
+			pieText.className = "pie-text text-dark";
+
+			pieCircle.id = id + "Pie";
+			pieText.id = id + "Text";
+
+			
+			if(titel === "Te laat") {
+				heading.innerHTML = `Te laat 
+					<span style="cursor:pointer;display:inline-block;position:relative;">
+						<span class="info-icon" 
+                        	title="Bij te laat ben je ook aanwezig. Dit percentage zit al in aanwezig.">i</span>
+						<span class="te-laat-tooltip" style="display:none;position:absolute;left:22px;top:0;background:#fff;border:1px solid #ccc;padding:6px 10px;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.1);font-size:12px;z-index:10;white-space:nowrap;">
+							Bij te laat ben je ook aanwezig.<br>Dit percentage zit al in aanwezig.
+						</span>
+					</span>`;
+				// Tooltip tonen/verbergen
+				setTimeout(() => {
+					const infoIcon = heading.querySelector('span > span');
+					const tooltip = heading.querySelector('.te-laat-tooltip');
+					if(infoIcon && tooltip) {
+						infoIcon.addEventListener('mouseenter', () => { tooltip.style.display = 'block'; });
+						infoIcon.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+					}
+				}, 0);
+			} else {
+				heading.innerText = titel;
+			}
+
+
+			pieText.innerHTML = `<strong>${percentage.toFixed(2)}%</strong>`;
+			
+			pieCircle.style.background = `
+					conic-gradient(
+						${color} ${percentage}%,
+						#dee2e6 ${percentage}% 100%
+					)
+				`;
+
+
+			pieCircle.appendChild(pieText);
+			container.appendChild(heading);
+
+			container.appendChild(pieCircle);
+			if(titel == "Te laat"){
+			//	var disclaimer = document.createElement("span");
+			//	disclaimer.className = "d-block w-50 mx-auto text-center"
+			//	disclaimer.innerHTML = "bij te laat ben je ook aanwezig </br> dit percentage zit al in aanwezig";
+			//	disclaimer.style.fontSize ="10px";
+			//	container.appendChild(disclaimer); <<Vervangen door i-tje>>>
+			}
+			pieContainer.appendChild(container);
+		}
+
+		function resetPie(){
+    pieContainer.innerHTML = '';
+    const alleDagen = document.querySelectorAll("td[data-aantal]");
+    let aantalZiekte = 0;
+    let aantalNietGeregistreerd = 0;
+    let aantalNietVerwacht = 0;
+    let aantalDiensten = 0;
+    let aantalAanwezig = 0;
+    let aantalAfwezig = 0;
+    let aantalTeLaat = 0;
+	let aantalEerderWeg = 0;
+	let aantalThuiswerken = 0;
+
+    alleDagen.forEach(function (dag) {
+        var ziekte = dag.getAttribute("data-ziek-aantal");
+        var nietGeregistreerd = dag.getAttribute("data-niet-geregisteerd");
+        var nietVerwacht = dag.getAttribute("data-nv-aantal");
+        var aanwezig = dag.getAttribute("data-aanwezig-aantal");
+        var afwezig = dag.getAttribute("data-afwezig-aantal");
+        var teLaat = dag.getAttribute("data-te-laat-aantal");
+		var eerderWeg = dag.getAttribute("data-eerder-weg-aantal");
+		var Thuiswerken = dag.getAttribute("data-thuiswerken-aantal");
+
+        if (ziekte != null) {
+            aantalZiekte++;
+        }
+        if (nietGeregistreerd != null) {
+            aantalNietGeregistreerd++;
+        } 
+        if (nietVerwacht != null) {
+            aantalNietVerwacht++;
+        }
+        if (aanwezig != null) {
+            aantalAanwezig++;
+        }
+        if (afwezig != null) {
+            aantalAfwezig++;
+        }
+        if (teLaat != null) {
+            aantalTeLaat++;
+        }
+		if(eerderWeg !=null) {
+			aantalEerderWeg++;
+		}
+		if(Thuiswerken !=null) {
+			aantalThuiswerken++;
+		}
+        aantalDiensten++;
+    });
+
+    let percentageNietGeregistreerd = aantalNietGeregistreerd / aantalDiensten * 100;
+    let percentageNietVerwacht = aantalNietVerwacht / aantalDiensten * 100;
+    let percentageZiek = aantalZiekte / aantalDiensten * 100;
+    let percentageAanwezig = (aantalAanwezig + aantalEerderWeg + aantalThuiswerken) / aantalDiensten * 100;
+    let percentageAfwezig = aantalAfwezig / aantalDiensten * 100;
+    let percentageTeLaat = aantalTeLaat / aantalDiensten * 100;
+	let percentageEerderWeg = aantalEerderWeg / aantalDiensten * 100;
+	let percentageThuiswerken = aantalThuiswerken / aantalDiensten * 100;
+
+    if (percentageAanwezig > 0 && !isNaN(percentageAanwezig)) {
+        createPie("Aanwezig", "aanwezig", `{{settings.colors['Aanwezig']}}`, percentageAanwezig);
+    }
+    if (percentageAfwezig > 0 && !isNaN(percentageAfwezig)) {
+        createPie("Afwezig", "afwezig", `{{settings.colors['Afwezig']}}`, percentageAfwezig);
+    }
+    if (percentageZiek > 0 && !isNaN(percentageZiek)) {
+        createPie("Ziek", "ziek", `{{settings.colors['Ziek']}}`, percentageZiek);
+    }
+    if (percentageNietGeregistreerd > 0 && !isNaN(percentageNietGeregistreerd)) {
+        createPie("Geen registratie", "nietGeregistreerd", `{{settings.colors['Geen registratie']}}`, percentageNietGeregistreerd);
+    }
+    if (percentageNietVerwacht > 0 && !isNaN(percentageNietVerwacht)) {
+        createPie("Niet verwachte diensten", "nietVerwacht", `{{settings.colors['Niet verwacht']}}`, percentageNietVerwacht);
+    }
+    if (percentageTeLaat > 0 && !isNaN(percentageTeLaat)) {
+        createPie("Te laat", "teLaat", `{{settings.colors['Te laat']}}`, percentageTeLaat);
+    }
+	if(percentageEerderWeg > 0 && percentageEerderWeg != NaN){
+		createPie("Eerder weg", "eerderWeg", `{{settings.colors['Eerder weg']}}`, percentageEerderWeg );	
+	}
+	if(percentageThuiswerken > 0 && percentageThuiswerken != NaN){
+		createPie("Thuiswerken", "thuiswerken", `{{settings.colors['Thuiswerken']}}`, percentageThuiswerken );	
+	}
+}
+		resetPie();	
+						
+		document.addEventListener('DOMContentLoaded', function () {
+            const selectYear = document.getElementById('selectYear');
+		    const selectWeek = document.getElementById('selectWeek');
+            const yearsWithMonths = {{ yearsJson| raw }};
+            function populateYears() {
+                // Vul de select met jaren
+                var selectedYear = {{ currentYear }};
+                yearsWithMonths.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    selectYear.appendChild(option);
+                });
+
+                selectYear.value = selectedYear;
+            }
+            populateYears();
+
+            const weeksWithData = {{ weeksJson| raw }};
+            function populateWeeks(){
+                var selectedWeek = {{ selectedWeek }};
+                weeksWithData.forEach(week => {
+                    const option = document.createElement('option')
+                    option.value = week;
+                    option.textContent = week;
+                    selectWeek.appendChild(option);
+                })
+                selectWeek.value = selectedWeek;
+            }
+            populateWeeks();
+
+            
+
+            //functie om een andere week te selecteren
+            function updateSchedule(selectedWeek, selectedYear){
+                window.location.href = `{{ path('week_rapportage', { 'year': 'year', 'week': 'weekNumber'}) }}`.replace('year', selectedYear).replace('weekNumber', selectedWeek);
+            }
+
+            selectWeek.addEventListener('change', function () {
+                let selectedWeek = selectWeek.value;
+                let selectedYear = selectYear.value;
+                updateSchedule(selectedWeek, selectedYear);
+            })
+
+			selectYear.addEventListener('change', function () {
+                let selectedWeek = selectWeek.value;
+                let selectedYear = selectYear.value;
+                updateSchedule(selectedWeek, selectedYear);
+            })
+
+
+
+			const searchInput = document.querySelector('#searchInput');
+			let userRow = document.querySelectorAll('.userRow');
+				
+			searchInput.addEventListener('blur', function() {
+				let filter = this.value.toLowerCase();
+				pieContainer.innerHTML = '';
+				if (!filter){
+					userRow.forEach(function(row){
+						row.style.display = 'table-row';				
+					})
+					resetPie();
+				} else {
+					aantalMedewerkerZiekte = 0;
+					aantalMedewerkerNietGeregistreerd = 0;
+					aantalMedewerkerNietVerwacht = 0;
+					aantalMedewerkerDiensten = 0;
+					aantalMedewerkerAanwezig = 0;
+					aantalMedewerkerAfwezig = 0;
+					aantalMedewerkerTeLaat = 0;
+					aantalMedewerkerEerderWeg = 0;
+					aantalMedewerkerThuiswerken = 0;
+					alleVerborgen = true;
+					userRow.forEach(function(row){
+						let username = row.getAttribute('data-medewerker').toLowerCase();
+						if (username.includes(filter)){				
+							alleVerborgen = false;
+							row.style.display= 'table-row';
+							let username = row.getAttribute('data-medewerker');
+							let usernameLow = username.toLowerCase();
+							let alleDagenMedewerker = document.querySelectorAll(`td[data-aantal-persoon="${username}"]`);
+							let personSearch = searchInput.value.toLowerCase();
+							
+								let percentageMedewerkerAanwezig = (aantalMedewerkerAanwezig + aantalMedewerkerEerderWeg) / aantalMedewerkerDiensten * 100;
+							alleDagenMedewerker.forEach(function (dag){
+								var ziekte = dag.getAttribute("data-ziek-aantal");
+								var teLaat = dag.getAttribute("data-te-laat-aantal");
+								var nietGeregistreerd = dag.getAttribute("data-niet-geregisteerd");
+								var nietVerwacht = dag.getAttribute("data-nv-aantal");
+								var aanwezig = dag.getAttribute("data-aanwezig-aantal");
+								var afwezig = dag.getAttribute("data-afwezig-aantal");
+								var eerderWeg = dag.getAttribute("data-eerder-weg-aantal");
+								var Thuiswerken = dag.getAttribute("data-thuiswerken-aantal");
+								if (ziekte != null) {
+									aantalMedewerkerZiekte ++;
+								}
+								if (nietGeregistreerd != null) {
+									aantalMedewerkerNietGeregistreerd ++;
+								} 
+								if (nietVerwacht != null) {
+									aantalMedewerkerNietVerwacht ++;
+								}
+								if(aanwezig !=null){
+									aantalMedewerkerAanwezig++;
+								}
+								if(afwezig !=null){
+									aantalMedewerkerAfwezig++;
+								}
+								if(teLaat != null){
+									aantalMedewerkerTeLaat ++
+								}
+								if(eerderWeg != null) {
+									aantalMedewerkerEerderWeg ++
+								}
+								if(Thuiswerken != null) {
+									aantalMedewerkerThuiswerken ++
+								}
+								aantalMedewerkerDiensten++
+							});				
+						} else {
+							row.style.display = 'none';
+						}
+					})
+					let percentageMedewerkerNietGeregistreerd = aantalMedewerkerNietGeregistreerd / aantalMedewerkerDiensten * 100;
+					let percentageMedewerkerNietVerwacht = aantalMedewerkerNietVerwacht / aantalMedewerkerDiensten * 100;
+					let percentageMedewerkerZiek = aantalMedewerkerZiekte / aantalMedewerkerDiensten * 100;
+					let percentageMedewerkerAanwezig = (aantalMedewerkerAanwezig + aantalMedewerkerEerderWeg) / aantalMedewerkerDiensten * 100;
+					let percentageMedewerkerAfwezig = aantalMedewerkerAfwezig / aantalMedewerkerDiensten * 100;
+					let percentageMedewerkerTeLaat = aantalMedewerkerTeLaat / aantalMedewerkerDiensten * 100;
+					let percentageMedewerkerEerderWeg = aantalMedewerkerEerderWeg / aantalMedewerkerDiensten * 100;
+					let percentageMedewerkerThuiswerken = aantalMedewerkerThuiswerken / aantalMedewerkerDiensten * 100;
+
+					if(percentageMedewerkerAanwezig > 0 && percentageMedewerkerAanwezig != NaN){
+						createPie("Aanwezig", "aanwezig",`{{settings.colors['Aanwezig']}}`, percentageMedewerkerAanwezig);
+					}
+					if(percentageMedewerkerTeLaat > 0 && percentageMedewerkerTeLaat != NaN){
+						createPie("Te laat", "teLaat", `{{settings.colors['Te laat']}}`, percentageMedewerkerTeLaat );	
+					}
+					if(percentageMedewerkerAfwezig > 0 && percentageMedewerkerAfwezig != NaN){
+						createPie("Afwezig", "afwezig",`{{settings.colors['Afwezig']}}`, percentageMedewerkerAfwezig);
+					}
+					if(percentageMedewerkerZiek > 0 && percentageMedewerkerZiek != NaN){
+						createPie("Ziek", "ziek",`{{settings.colors['Ziek']}}`, percentageMedewerkerZiek );
+					}
+					if(percentageMedewerkerNietGeregistreerd > 0 && percentageMedewerkerNietGeregistreerd != NaN){
+						createPie("Geen registratie", "nietGeregistreerd", `{{settings.colors['Geen registratie']}}`, percentageMedewerkerNietGeregistreerd );
+					}
+					if(percentageMedewerkerNietVerwacht > 0 && percentageMedewerkerNietVerwacht != NaN){
+						createPie("Niet verwachte diensten", "nietVerwacht", `{{settings.colors['Niet verwacht']}}`, percentageMedewerkerNietVerwacht );	
+					}
+					if(percentageMedewerkerEerderWeg > 0 && percentageMedewerkerEerderWeg != NaN){
+						createPie("Eerder weg", "eerderWeg", `{{settings.colors['Eerder weg']}}`, percentageMedewerkerEerderWeg );	
+					}
+					if(percentageMedewerkerThuiswerken > 0 && percentageMedewerkerThuiswerken != NaN){
+						createPie("Thuiswerken", "thuiswerken", `{{settings.colors['Thuiswerken']}}`, percentageMedewerkerThuiswerken );	
+					}
+					if(alleVerborgen){
+						pieContainer.innerHTML = '';
+					}
+				}
+			})
+										
+			let departmentSelector = document.querySelector('#departmentSelector')
+			departmentSelector.addEventListener('change',function(){
+				let filter = departmentSelector.value;
+				pieContainer.innerHTML = '';
+				if (filter == 'All' ){
+					userRow.forEach(function(row){
+						row.style.display = 'table-row';
+					})
+				resetPie();
+				} else {
+					aantalMedewerkerZiekte = 0;
+					aantalMedewerkerNietGeregistreerd = 0;
+					aantalMedewerkerNietVerwacht = 0;
+					aantalMedewerkerDiensten = 0;
+					aantalMedewerkerAanwezig = 0;
+					aantalMedewerkerAfwezig = 0;
+					aantalMedewerkerTeLaat = 0;
+					aantalMedewerkerEerderWeg = 0;
+					aantalMedewerkerThuiswerken = 0;
+					alleVerborgen = true;
+
+					userRow.forEach(function(row){
+						let userDepartment = row.getAttribute('data-department');
+						if (userDepartment.includes(filter)){
+							alleVerborgen = false;
+							row.style.display= 'table-row';
+							let username = row.getAttribute('data-medewerker');
+							let usernameLow = username.toLowerCase();
+							let alleDagenMedewerker = document.querySelectorAll(`td[data-aantal-persoon="${username}"]`);
+							let personSearch = searchInput.value.toLowerCase();
+							
+							alleDagenMedewerker.forEach(function (dag){
+								var ziekte = dag.getAttribute("data-ziek-aantal");
+								var teLaat = dag.getAttribute("data-te-laat-aantal");
+								var nietGeregistreerd = dag.getAttribute("data-niet-geregisteerd");
+								var nietVerwacht = dag.getAttribute("data-nv-aantal");
+								var aanwezig = dag.getAttribute("data-aanwezig-aantal");
+								var afwezig = dag.getAttribute("data-afwezig-aantal");
+								var eerderWeg = dag.getAttribute("data-eerder-weg-aantal");
+								var Thuiswerken = dag.getAttribute("data-thuiswerken-aantal");
+								if (ziekte != null) {
+									aantalMedewerkerZiekte ++;
+								}
+								if (nietGeregistreerd != null) {
+									aantalMedewerkerNietGeregistreerd ++;
+								} 
+								if (nietVerwacht != null) {
+									aantalMedewerkerNietVerwacht ++;
+								}
+								if(aanwezig !=null){
+									aantalMedewerkerAanwezig++;
+								}
+								if(afwezig !=null){
+									aantalMedewerkerAfwezig++;
+								}
+								if(teLaat != null){
+									aantalMedewerkerTeLaat ++;
+								}
+								if(eerderWeg != null){
+									aantalMedewerkerEerderWeg ++;
+								}
+								if(Thuiswerken != null){
+									aantalMedewerkerThuiswerken ++;
+								}
+								aantalMedewerkerDiensten++;
+							});
+						}
+						else{
+							row.style.display = 'none';
+						}
+					})
+					// Calculate percentages for each month
+					let percentagesPerMonth = {
+						aantalZiekte: [],
+						aantalNietGeregistreerd: [],
+						aantalNietVerwacht: [],
+						aantalAanwezig: [],
+						aantalAfwezig: [],
+						aantalTelaat: [],
+						aantalEerderWeg: [],
+						aantalThuiswerken: []
+					};
+					let percentageMedewerkerNietGeregistreerd = aantalMedewerkerNietGeregistreerd / aantalMedewerkerDiensten * 100;
+					let percentageMedewerkerNietVerwacht = aantalMedewerkerNietVerwacht / aantalMedewerkerDiensten * 100;
+					let percentageMedewerkerZiek = aantalMedewerkerZiekte / aantalMedewerkerDiensten * 100;
+					let percentageMedewerkerAanwezig = (aantalMedewerkerAanwezig + aantalMedewerkerEerderWeg) / aantalMedewerkerDiensten * 100;
+					let percentageMedewerkerAfwezig = aantalMedewerkerAfwezig / aantalMedewerkerDiensten * 100;
+					let percentageMedewerkerTeLaat = aantalMedewerkerTeLaat / aantalMedewerkerDiensten * 100;
+					let percentageMedewerkerEerderWeg = aantalMedewerkerEerderWeg / aantalDiensten * 100;
+					let percentageMedewerkerThuiswerken = aantalMedewerkerThuiswerken / aantalDiensten * 100;
+					createPie("Aanwezig", "aanwezig",`{{settings.colors['Aanwezig']}}`, percentageMedewerkerAanwezig);
+					createPie("Te laat", "teLaat", `{{settings.colors['Te laat']}}`, percentageMedewerkerTeLaat);	
+					createPie("Afwezig", "afwezig",`{{settings.colors['Afwezig']}}`, percentageMedewerkerAfwezig);
+					createPie("Ziek", "ziek",`{{settings.colors['Ziek']}}`, percentageMedewerkerZiek);
+					createPie("Geen registratie", "nietGeregistreerd", `{{settings.colors['Geen registratie']}}`, percentageMedewerkerNietGeregistreerd);
+					createPie("Niet verwachte diensten", "nietVerwacht", `{{settings.colors['Niet verwacht']}}`, percentageMedewerkerNietVerwacht);	
+					createPie("Eerder weg", "eerderWeg", `{{settings.colors['Eerder weg']}}`, percentageMedewerkerEerderWeg);
+					createPie("Thuiswerken", "thuiswerken", `{{settings.colors['Thuiswerken']}}`, percentageMedewerkerThuiswerken);
+
+					if(alleVerborgen){
+						pieContainer.innerHTML = '';
+					}
+				}
+			})
+		})
+
+		function setCookie(search, value, days) {
+        var expires = "";
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = search + "=" + (value || "") + expires + "; path=/";
+    }
+
+    // Function to get a cookie
+    function getCookie(search) {
+        var searchEQ = search + "=";
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+            if (c.indexOf(searchEQ) === 0) return c.substring(searchEQ.length, c.length);
+        }
+        return null;
+    }
+
+	document.addEventListener('DOMContentLoaded', function() {
+		searchInput.value = getCookie('search') || '';
+		let inputText = searchInput.value.trim();
+        let selectedNames = inputText.length > 0 ? inputText.split(',').map(name => name.trim()) : [];
+       
+        if (selectedNames.length > 0) {
+            updatePies(selectedNames); 
+            updateTable(selectedNames); 
+        }
+		searchInput.addEventListener('change', function() {
+        setCookie('search', searchInput.value, 1);
+    });
+	});
+	</script>
+{% endblock %}

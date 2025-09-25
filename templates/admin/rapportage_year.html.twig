@@ -1,0 +1,1208 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Jaar Rapportage
+{% endblock %}
+
+{% block head %}
+	{{ parent() }}
+	<link rel="stylesheet" href="{{ asset('styles/admin_rapportage.css') }}"/>
+	<style>
+		/* Add horizontal scroll for the table if the class is present */
+		.table-scrollable {
+			overflow-y: auto;
+			height: 500px;
+            border: 2px solid #0e6281;
+		}
+		.scroll-x{
+			overflow-x: auto;
+		}
+
+		/* Ensure the table takes full width */
+		.table {}
+		thead th {
+			position: sticky;
+			top: 0;
+		}
+		.pie {
+			width: 200px;
+			height: 200px;
+			margin: 0 auto;
+			border-radius: 50%;
+			position: relative;
+			background: conic-gradient({{settings.colors["Aanwezig"]}} 0% 0%, {{settings.colors["Ziek"]}} 0% 0%, {{settings.colors["Afwezig"]}} 0% 0%, {{settings.colors["Niet verwacht"]}} 0% 0%, #dee2e6 0% 100%, {{settings.colors["Geen registratie"]}} 0% 0%);
+		}
+		.pie-text {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 1.2em;
+			color: #000;
+		}
+		ul#autocompleteList > li {
+			cursor: pointer;
+		}
+	</style>
+{% endblock %}
+
+{% block body %}
+	<section class="mt-6 main-content">
+            {% block headertitle %}
+                <h2 class="m-0 fs-2 mt-3 text-black custom_h2">Jaar rapportage</h2>
+            {% endblock %}
+		<article class="d-flex flex-row justify-content-between bg-light">
+			<div class="input-group w-30">
+					 <div class="relative search-container">
+     				<input type="text" id="searchInput" placeholder="Zoeken medewerker..." class="search-input">
+      				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+        			<path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.442 1.398a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+      				</svg>
+    				</div>
+				<ul id="autocompleteList" class="list-group position-absolute mt-5 w-100 z-3"></ul>
+                <select name="departmentSelector" id="departmentSelector" class="w-10 ms-1 form-select rounded">
+                    <option value="" disabled selected hidden>Kies een afdeling...</option>
+                    <option value="All">Alle afdelingen</option>
+                {% for department in settings.departments | sort %}
+                    <option value="{{department}}">{{department}}</option>
+                {% endfor %}
+                </select>
+			</div>
+			<div class="w-50 d-flex flex-row justify-content-end">
+				<select id="selectYear" name="selectYear" class="w-15 me-1 form-select rounded"></select>
+				<a href="{{ path('rapportage') }}" class="btn bg-color-sky-blue me-1">
+        			Maandoverzicht
+    			</a>
+				<a href="{{ path('week_rapportage', { 'year': trueYear, 'week': currentWeek }) }}" class="btn bg-color-sky-blue">
+        			Weekoverzicht
+    			</a>
+
+			<div>
+	 </article>
+		{# Determine if the number of userSchedules exceeds 10 #}
+		{% set isScrollable = userSchedules|length > 5 %}
+		<section class="{% if isScrollable %}table-scrollable{% endif %} scroll-x">
+			<table class="table table-hover">
+				<thead class="thead-dark">
+					<tr class="bg-light-subtle">
+						<th class="bg-light sticky-2">Medewerker</th>
+						{% for day in yearDates %}
+							<th class="bg-light">{{ day }}</th>
+						{% endfor %}
+					</tr>
+				</thead>
+				{% set currentDate = "now"|date('d-m-Y') %}
+				{% set currentTime = "now"|date('H') %}
+				<tbody>
+					{% for userSchedule in userSchedules %}
+						<tr class='userRow' data-medewerker="{{ userSchedule.user.profile.name }}" data-department="{{ userSchedule.user.profile.department }}">
+							<th class="py-2 sticky">
+								<a href="{{ path('profile_view', {'id': userSchedule.user.id}) }}" class="link-dark link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">{{ userSchedule.user.profile.name }}</a>
+							</th>
+							{% for days in yearDates %}
+								{% set fullDateString = days ~ '-' ~ currentYear %}
+								{% set dateObject = fullDateString|date('d-m-Y') %}
+								{% set weekNumber = dateObject|date('W') %}
+								{% set dayStatus = userSchedule['weeks'][weekNumber][days] ?? null %}
+								{% set attended = dayStatus['attended'] ?? '-' %}
+								{% set scheduled = dayStatus['scheduled'] ?? '-' %}
+								{% set dayOfWeek = dateObject|date('N') %}
+								{# Format currentDate to d-m-Y for accurate comparison #}
+								{% set currentDateFormatted = currentDate|date('d-m-Y') %}
+								{% set currentMonth = currentDate|date('m')|number_format %}
+								{# Get current month as a number #}
+								{% set currentDay = currentDate|date('d')|number_format %}
+								{# Get current day as a number #}
+
+
+								{% set currentDateFormatted = currentDate|date('d-m-Y') %}
+								{% set dateMonth = dateObject|date('m')|number_format %}
+								{% set dateDay = dateObject|date('d')|number_format %}
+                                
+
+								{% if attended == "Aanwezig" %}
+									<td class='colored fs15' data-color="{{ settings.colors['Aanwezig'] }}" data-aantal data-aantal-maand="{{dateMonth}}" data-aantal-persoon="{{ userSchedule.user.profile.name }}" data-aanwezig-persoon="{{ userSchedule.user.profile.name }}" data-aanwezig-aantal style="background-color:{{ settings.colors['Aanwezig'] }}">
+										aan.</td>
+								{% elseif attended == "Ziek" %}
+									<td class='colored fs15' data-color="{{ settings.colors['Ziek'] }}" data-aantal data-aantal-maand="{{dateMonth}}" data-aantal-persoon="{{ userSchedule.user.profile.name }}" data-ziek-persoon="{{ userSchedule.user.profile.name }}" data-ziek-aantal style="background-color:{{ settings.colors['Ziek'] }}">ziek</td>
+                                {% elseif attended == "Niet verwacht" %}
+									<td class='colored fs15' data-color="{{ settings.colors['Niet verwacht'] }}" data-aantal data-aantal-maand="{{dateMonth}}" data-aantal-persoon="{{ userSchedule.user.profile.name }}" data-nv-persoon="{{ userSchedule.user.profile.name }}" data-nv-aantal style="background-color:{{ settings.colors['Niet verwacht'] }}">n.v.</td>
+								{% elseif attended == "Afwezig" %}
+									<td class='colored fs15' data-color="{{ settings.colors['Afwezig'] }}" data-aantal data-aantal-maand="{{dateMonth}}" data-aantal-persoon="{{ userSchedule.user.profile.name }}" data-afwezig-persoon="{{ userSchedule.user.profile.name }}" data-afwezig-aantal style="background-color:{{ settings.colors['Afwezig'] }}">afw.</td>
+								{% elseif attended == "Vrij" %}
+									<td class='colored fs15' data-color="{{ settings.colors['Vrij'] }}" style="background-color:{{ settings.colors['Vrij'] }}">Vrij</td>
+								{% elseif attended == "Eerder weg" %}
+										<td class='colored fs15' data-color="{{settings.colors['Eerder weg']}}" data-aantal data-aantal-maand="{{dateMonth}}" data-aantal-persoon="{{userSchedule.user.profile.name}}" data-eerder-weg-persoon="{{userSchedule.user.profile.name}}" data-eerder-weg-aantal style="background-color:{{settings.colors['Eerder weg']}}">e.w.</td>
+                                {% elseif attended == "Thuiswerken" %}
+										<td class='colored fs15' data-color="{{settings.colors['Thuiswerken']}}" data-aantal data-aantal-maand="{{dateMonth}}" data-aantal-persoon="{{userSchedule.user.profile.name}}" data-thuiswerken-persoon="{{userSchedule.user.profile.name}}" data-thuiswerken-aantal style="background-color:{{settings.colors['Thuiswerken']}}">t.w.</td>
+                                {% elseif attended == "?" %}
+									{% if not future %}
+										{% if dateMonth < currentMonth %}
+											<td class='colored fs15' data-color="{{ settings.colors['Geen registratie'] }}" data-aantal data-aantal-maand="{{dateMonth}}" data-aantal-persoon="{{ userSchedule.user.profile.name }}" data-niet-geregisteerd style="background-color:{{ settings.colors['Geen registratie']}}"><i class="bi bi-question"></i></td>
+
+											{# Check if the current month and day are both less than the date being checked #}
+										{% elseif dateMonth == currentMonth and dateDay < currentDay %}
+											<td class='colored fs15' data-color="{{ settings.colors['Geen registratie'] }}" data-aantal data-aantal-maand="{{dateMonth}}" data-aantal-persoon="{{ userSchedule.user.profile.name }}" data-niet-geregisteerd style="background-color:{{ settings.colors['Geen registratie'] }}"><i class="bi bi-question"></td>
+
+											{# Else condition if neither of the above checks are true #}
+										{% else %}
+											<td><i class="bi bi-check"></i></td>
+										{% endif %}
+										{% endif %}
+									{% elseif attended == "Te laat" %}
+										<td class='colored fs15' data-color="{{ settings.colors['Te laat'] }}" data-aantal data-aantal-maand="{{dateMonth}}" data-aantal-persoon="{{ userSchedule.user.profile.name }}" data-te-laat-persoon="{{ userSchedule.user.profile.name }}" data-aanwezig-aantal data-te-laat-aantal style="background-color:{{ settings.colors['Te laat'] }}">t.l.</td>
+									{% elseif dayOfWeek in [6, 7] %}
+										<td class='bg-secondary bg-gradient'></td>
+									{% else %}
+										<td>{{ attended }}</td>
+									{% endif %}
+
+								{% endfor %}
+
+
+							</tr>
+						{% endfor %}
+					</tbody>
+				</tbody>
+			</tr>
+		</tbody>
+	</tbody>
+</table></section><section class="w-100 p-3 mt-3">
+<div class="border border-top-1">
+	<h3>Jaar</h3>
+	<div id="pies" class="row p-0 m-0 gy-2"></div>
+</div>
+<div class="border border-top-1">
+	<h3>Januari</h3>
+	<div id="pies1" class="row p-0 m-0 gy-2"></div>
+</div>
+<div class="border border-top-1">
+	<h3>Februari</h3>
+	<div id="pies2" class="row p-0 m-0 gy-2"></div>
+</div>
+<div class="border border-top-1">
+	<h3>Maart</h3>
+	<div id="pies3" class="row p-0 m-0 gy-2"></div>
+</div>
+<div class="border border-top-1">
+	<h3>April</h3>
+	<div id="pies4" class="row p-0 m-0 gy-2"></div>
+</div>
+<div class="border border-top-1">
+	<h3>Mei</h3>
+	<div id="pies5" class="row p-0 m-0 gy-2"></div>
+</div>
+<div class="border border-top-1">
+	<h3>Juni</h3>
+	<div id="pies6" class="row p-0 m-0 gy-2"></div>
+</div>
+<div class="border border-top-1">
+	<h3>Juli</h3>
+	<div id="pies7" class="row p-0 m-0 gy-2"></div>
+</div>
+<div class="border border-top-1">
+	<h3>Augustus</h3>
+	<div id="pies8" class="row p-0 m-0 gy-2"></div>
+</div>
+<div class="border border-top-1">
+	<h3>September</h3>
+	<div id="pies9" class="row p-0 m-0 gy-2"></div>
+</div>
+<div class="border border-top-1">
+	<h3>Oktober</h3>
+	<div id="pies10" class="row p-0 m-0 gy-2"></div>
+</div>
+<div class="border border-top-1">
+	<h3>November</h3>
+	<div id="pies11" class="row p-0 m-0 gy-2"></div>
+</div>
+<div class="border border-top-1">
+	<h3>December</h3>
+	<div id="pies12" class="row p-0 m-0 gy-2"></div>
+</div>
+</section>
+</section>
+<script src="{{ asset('js/textColoring.js')}}"></script>
+<script>
+    // Vind de input en de autocomplete lijst
+    var searchInput = document.getElementById('searchInput');
+    var autocompleteList = document.getElementById('autocompleteList');
+
+    var pieContainerYear = document.querySelector("#pies");
+    var pieContainerMonth1 = document.querySelector("#pies1");
+    var pieContainerMonth2 = document.querySelector("#pies2");
+    var pieContainerMonth3 = document.querySelector("#pies3");
+    var pieContainerMonth4 = document.querySelector("#pies4");
+    var pieContainerMonth5 = document.querySelector("#pies5");
+    var pieContainerMonth6 = document.querySelector("#pies6");
+    var pieContainerMonth7 = document.querySelector("#pies7");
+    var pieContainerMonth8 = document.querySelector("#pies8");
+    var pieContainerMonth9 = document.querySelector("#pies9");
+    var pieContainerMonth10 = document.querySelector("#pies10");
+    var pieContainerMonth11 = document.querySelector("#pies11");
+    var pieContainerMonth12 = document.querySelector("#pies12");
+
+    // Render de `userSchedules` data in een JavaScript array
+    const userSchedules = [
+        {% for userSchedule in userSchedules %}
+        {
+            name: "{{ userSchedule.user.profile.name }}",
+            department: "{{ userSchedule.user.profile.department }}"
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    const employees = [
+    {% for userSchedule in userSchedules %}
+    {
+        name: "{{ userSchedule.user.profile.name|e('js') }}",
+        firstName: "{{ userSchedule.user.profile.name|split(' ')[0]|e('js') }}",
+        lastName: "{{ userSchedule.user.profile.name|split(' ')|length > 1 ? userSchedule.user.profile.name|split(' ')[userSchedule.user.profile.name|split(' ')|length-1]|e('js') : '' }}",
+        department: "{{ userSchedule.user.profile.department|e('js') }}"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+	const yearsWithMonths = {{ yearsJson| raw }};
+
+
+function getDisplayName(name, department, userSchedules) {
+    const isDuplicate = userSchedules.filter(s => s.name === name).length > 1;
+    return isDuplicate ? `${name} (${department})` : name;
+}
+
+
+	function populateYears() {
+		const urlParams = new URLSearchParams(window.location.search);
+		const yearParam = urlParams.get('year');
+		const currentYear = yearParam ? yearParam : {{ currentYear }};
+		
+		yearsWithMonths.forEach(year => {
+			const option = document.createElement('option');
+			option.value = year;
+			option.textContent = year;
+			if (year == currentYear) {
+				option.selected = true;
+			}
+			selectYear.appendChild(option);
+		});
+		
+		selectYear.addEventListener('change', function() {
+			const selectedYear = parseInt(this.value);
+			window.location.href = "{{ path('year_rapportage', {'year': 'YEAR_PLACEHOLDER'}) }}".replace('YEAR_PLACEHOLDER', selectedYear);
+		});
+	}
+	populateYears();
+
+// Autocomplete en zoeken op voornaam, achternaam of volledige naam
+searchInput.addEventListener('input', function() {
+    autocompleteList.style.display = 'block';
+    let inputText = this.value.trim();
+    let selectedNames = inputText.length > 0 ? inputText.split(',').map(name => name.trim()).filter(Boolean) : [];
+    let query = selectedNames.length > 0 ? selectedNames[selectedNames.length - 1].toLowerCase() : '';
+    autocompleteList.innerHTML = '';
+
+   if (query.length > 0) {
+    const filteredEmployees = employees.filter(employee => {
+        const nameParts = employee.name.toLowerCase().split(' ');
+        return (
+            employee.name.toLowerCase().startsWith(query) ||
+            employee.firstName.toLowerCase().startsWith(query) ||
+            employee.lastName.toLowerCase().startsWith(query) ||
+            nameParts.some(part => part.startsWith(query))
+        );
+    }).map(employee => employee.name);
+
+         // Unieke namen tonen
+    [...new Set(filteredEmployees)].forEach(employeeName => {
+        const listItem = document.createElement('li');
+        listItem.classList.add('list-group-item', 'z-4');
+        listItem.textContent = employeeName;
+        listItem.addEventListener('click', function() {
+            selectedNames[selectedNames.length - 1] = employeeName;
+            searchInput.value = selectedNames.join(', ') + ', ';
+            autocompleteList.innerHTML = '';
+            searchInput.dispatchEvent(new Event('change'));
+            updatePies(selectedNames);
+            updateTable(selectedNames);
+        });
+        autocompleteList.appendChild(listItem);
+    });
+    }
+
+    updatePies(selectedNames);
+    updateTable(selectedNames);
+});
+
+
+document.addEventListener('click', function(event) {
+    if (!searchInput.contains(event.target) && !autocompleteList.contains(event.target)) {
+        autocompleteList.style.display = 'none'; 
+        
+
+        let inputText = searchInput.value.trim();
+        let selectedNames = inputText.length > 0 ? inputText.split(',').map(name => name.trim()) : [];
+
+       
+        if (selectedNames.length > 0) {
+            updatePies(selectedNames); 
+            updateTable(selectedNames); 
+        }
+    }
+});
+
+function updateTable(selectedNames) {
+    const userRows = document.querySelectorAll('.userRow');
+    userRows.forEach(row => {
+        const username = row.getAttribute('data-medewerker');
+        const nameParts = username.toLowerCase().split(' ');
+        const match = selectedNames.some(name =>
+            name.length > 0 && (
+                username.toLowerCase() === name.toLowerCase() ||
+                nameParts.some(part => part.startsWith(name.toLowerCase()))
+            )
+        );
+        row.style.display = match ? 'table-row' : 'none';
+    });
+}
+
+function updatePies(selectedNames) {
+    pieContainerYear.innerHTML = '';
+    for (let i = 1; i <= 12; i++) {
+        document.querySelector(`#pies${i}`).innerHTML = '';
+    }
+
+    let aantalZiekte = 0;
+    let aantalNietGeregistreerd = 0;
+    let aantalNietVerwacht = 0;
+    let aantalDiensten = 0;
+    let aantalAanwezig = 0;
+    let aantalAfwezig = 0;
+    let aantalTeLaat = 0;
+    let aantalEerderWeg = 0;
+    let aantalThuiswerken = 0;
+
+    let aantalZiekteMaanden = Array(12).fill(0);
+    let aantalNietGeregistreerdMaanden = Array(12).fill(0);
+    let aantalNietVerwachtMaanden = Array(12).fill(0);
+    let aantalDienstenMaanden = Array(12).fill(0);
+    let aantalAanwezigMaanden = Array(12).fill(0);
+    let aantalAfwezigMaanden = Array(12).fill(0);
+    let aantalTeLaatMaanden = Array(12).fill(0);
+    let aantalEerderWegMaanden = Array(12).fill(0);
+    let aantalThuiswerkenMaanden = Array(12).fill(0);
+
+    let matchedFullNames = [];
+    selectedNames.forEach(name => {
+    employees.forEach(emp => {
+        if (
+            emp.name.toLowerCase() === name.toLowerCase() ||
+            emp.firstName.toLowerCase() === name.toLowerCase() ||
+            emp.lastName.toLowerCase() === name.toLowerCase()
+        ) {
+            matchedFullNames.push(emp.name);
+        }
+    });
+});
+matchedFullNames = [...new Set(matchedFullNames)]; // unieke namen
+
+matchedFullNames.forEach(name => {
+    let alleDagenMedewerker = Array.from(document.querySelectorAll('td[data-aantal-persoon]')).filter(dag =>
+        dag.getAttribute('data-aantal-persoon').toLowerCase() === name.toLowerCase()
+    );
+        alleDagenMedewerker.forEach(function (dag) {
+            var ziekte = dag.getAttribute("data-ziek-aantal");
+            var nietGeregistreerd = dag.getAttribute("data-niet-geregisteerd");
+            var nietVerwacht = dag.getAttribute("data-nv-aantal");
+            var aanwezig = dag.getAttribute("data-aanwezig-aantal");
+            var afwezig = dag.getAttribute("data-afwezig-aantal");
+            var teLaat = dag.getAttribute("data-te-laat-aantal");
+            var eerderWeg = dag.getAttribute("data-eerder-weg-aantal");
+            var Thuiswerken = dag.getAttribute("data-thuiswerken-aantal");
+
+            if (ziekte != null) {
+                aantalZiekte++;
+            }
+            if (nietGeregistreerd != null) {
+                aantalNietGeregistreerd++;
+            }
+            if (nietVerwacht != null) {
+                aantalNietVerwacht++;
+            }
+            if (aanwezig != null || eerderWeg != null || Thuiswerken != null) { 
+                aantalAanwezig++;
+            }
+            if (afwezig != null) {
+                aantalAfwezig++;
+            }
+            if (teLaat != null) {
+                aantalTeLaat++;
+            }
+            if (eerderWeg != null) {
+                aantalEerderWeg++;
+            }
+            if (Thuiswerken != null) {
+                aantalThuiswerken++;
+            }
+            aantalDiensten++;
+
+            var monthNumber = dag.getAttribute("data-aantal-maand");
+            if (monthNumber >= 1 && monthNumber <= 12) {
+                if (ziekte != null) {
+                    aantalZiekteMaanden[monthNumber - 1]++;
+                }
+                if (nietGeregistreerd != null) {
+                    aantalNietGeregistreerdMaanden[monthNumber - 1]++;
+                }
+                if (teLaat != null) {
+                    aantalTeLaatMaanden[monthNumber - 1]++;
+                }
+                if (nietVerwacht != null) {
+                    aantalNietVerwachtMaanden[monthNumber - 1]++;
+                }
+                if (aanwezig != null || eerderWeg != null || Thuiswerken != null) { 
+                    aantalAanwezigMaanden[monthNumber - 1]++;
+                }
+                if (afwezig != null) {
+                    aantalAfwezigMaanden[monthNumber - 1]++;
+                }
+                if (eerderWeg != null) {
+                    aantalEerderWegMaanden[monthNumber - 1]++;
+                }
+                if (Thuiswerken != null) {
+                    aantalThuiswerkenMaanden[monthNumber - 1]++;
+                }
+                aantalDienstenMaanden[monthNumber - 1]++;
+            }
+        });
+    });
+
+    let percentagesPerMonth = {
+        aantalZiekte: [],
+        aantalNietGeregistreerd: [],
+        aantalNietVerwacht: [],
+        aantalAanwezig: [],
+        aantalAfwezig: [],
+        aantalTelaat: [],
+        aantalEerderWeg: [],
+        aantalThuiswerken: []
+      
+    };
+
+    for (let i = 0; i < 12; i++) {
+        percentagesPerMonth.aantalZiekte[i] = (aantalZiekteMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+        percentagesPerMonth.aantalNietGeregistreerd[i] = (aantalNietGeregistreerdMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+        percentagesPerMonth.aantalNietVerwacht[i] = (aantalNietVerwachtMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+        percentagesPerMonth.aantalAanwezig[i] = (aantalAanwezigMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+        percentagesPerMonth.aantalAfwezig[i] = (aantalAfwezigMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+        percentagesPerMonth.aantalTelaat[i] = (aantalTeLaatMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+        percentagesPerMonth.aantalEerderWeg[i] = (aantalEerderWegMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+        percentagesPerMonth.aantalThuiswerken[i] = (aantalThuiswerkenMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+        var pieContainerMonth = document.querySelector(`#pies${i + 1}`);
+
+        createPie("Aanwezig", "aanwezig", `{{settings.colors['Aanwezig']}}`, percentagesPerMonth.aantalAanwezig[i], pieContainerMonth);
+        createPie("Te laat", "teLaat", `{{settings.colors['Te laat']}}`, percentagesPerMonth.aantalTelaat[i], pieContainerMonth);
+        createPie("Afwezig", "afwezig", `{{settings.colors['Afwezig']}}`, percentagesPerMonth.aantalAfwezig[i], pieContainerMonth);
+        createPie("Ziek", "ziek", `{{settings.colors['Ziek']}}`, percentagesPerMonth.aantalZiekte[i], pieContainerMonth);
+        createPie("Geen registratie", "nietGeregistreerd", `{{settings.colors['Geen registratie']}}`, percentagesPerMonth.aantalNietGeregistreerd[i], pieContainerMonth);
+        createPie("Niet verwachte diensten", "nietVerwacht", `{{settings.colors['Niet verwacht']}}`, percentagesPerMonth.aantalNietVerwacht[i], pieContainerMonth);
+        createPie("Eerder weg", "eerderWeg", `{{settings.colors['Eerder weg']}}`, percentagesPerMonth.aantalEerderWeg[i], pieContainerMonth);
+        createPie("Thuiswerken", "thuiswerken", `{{settings.colors['Thuiswerken']}}`, percentagesPerMonth.aantalThuiswerken[i], pieContainerMonth);
+    }
+
+    let percentageNietGeregistreerd = aantalNietGeregistreerd / aantalDiensten * 100;
+    let percentageNietVerwacht = aantalNietVerwacht / aantalDiensten * 100;
+    let percentageZiek = aantalZiekte / aantalDiensten * 100;
+    let percentageAanwezig = aantalAanwezig / aantalDiensten * 100;
+    let percentageAfwezig = aantalAfwezig / aantalDiensten * 100;
+    let percentageTeLaat = aantalTeLaat / aantalDiensten * 100;
+    let percentageEerderWeg = aantalEerderWeg / aantalDiensten * 100; 
+    let percentageThuiswerken = aantalThuiswerken / aantalDiensten * 100; 
+
+    createPie("Aanwezig", "aanwezig", `{{settings.colors['Aanwezig']}}`, percentageAanwezig, pieContainerYear);
+    createPie("Te laat", "teLaat", `{{settings.colors['Te laat']}}`, percentageTeLaat, pieContainerYear);
+    createPie("Afwezig", "afwezig", `{{settings.colors['Afwezig']}}`, percentageAfwezig, pieContainerYear);
+    createPie("Ziek", "ziek", `{{settings.colors['Ziek']}}`, percentageZiek, pieContainerYear);
+    createPie("Geen registratie", "nietGeregistreerd", `{{settings.colors['Geen registratie']}}`, percentageNietGeregistreerd, pieContainerYear);
+    createPie("Niet verwachte diensten", "nietVerwacht", `{{settings.colors['Niet verwacht']}}`, percentageNietVerwacht, pieContainerYear);
+    createPie("Eerder weg", "eerderWeg", `{{settings.colors['Eerder weg']}}`, percentageEerderWeg, pieContainerYear); 
+    createPie("Thuiswerken", "thuiswerken", `{{settings.colors['Thuiswerken']}}`, percentageThuiswerken, pieContainerYear); 
+}
+
+        
+								
+    function createPie(titel, id, color, percentage, pieContainer){
+        var container = document.createElement("div");
+        var heading = document.createElement("h4");
+        var pieCircle = document.createElement("div");
+        var pieText = document.createElement("div");
+
+        container.className = "col p-0 mx-1";
+        heading.className = "text-center";
+        pieCircle.className = "pie";
+        pieText.className = "pie-text text-dark";
+
+        pieCircle.id = id + "Pie";
+        pieText.id = id + "Text";
+
+
+    // info-icoon bij "Te laat"
+        if(titel === "Te laat") {
+            heading.innerHTML = `Te laat 
+                <span style="cursor:pointer;display:inline-block;position:relative;">
+                    <span class="info-icon"">i</span>
+                    <span class="te-laat-tooltip" style="display:none;position:absolute;left:22px;top:0;background:#fff;border:1px solid #ccc;padding:6px 10px;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.1);font-size:12px;z-index:10;white-space:nowrap;">
+                        Bij te laat ben je ook aanwezig.<br>Dit percentage zit al in aanwezig.
+                    </span>
+                </span>`;
+    // Tooltip tonen/verbergen
+            setTimeout(() => {
+                const infoIcon = heading.querySelector('.info-icon');
+                const tooltip = heading.querySelector('.te-laat-tooltip');
+                if(infoIcon && tooltip) {
+                    infoIcon.addEventListener('mouseenter', () => { tooltip.style.display = 'block'; });
+                    infoIcon.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+                }
+            }, 0);
+        } else {
+            heading.innerText = titel;
+        }
+        ///
+        pieText.innerHTML = `<strong>${percentage.toFixed(2)}%</strong>`;
+        
+        pieCircle.style.background = `
+                conic-gradient(
+                    ${color} ${percentage}%,
+                    #dee2e6 ${percentage}% 100%
+                )
+            `;
+
+        pieCircle.appendChild(pieText);
+        container.appendChild(heading);
+
+        container.appendChild(pieCircle);
+        if(titel == "Te laat"){
+        //    var disclaimer = document.createElement("span");
+        //    disclaimer.className = "d-block w-50 mx-auto text-center"
+        //    disclaimer.innerHTML = "bij te laat ben je ook aanwezig </br> dit percentage zit al in aanwezig";
+        //    disclaimer.style.fontSize ="10px";
+        //    container.appendChild(disclaimer);
+        }
+        pieContainer.appendChild(container);
+    }
+
+	
+    function resetPie(){
+        pieContainerYear.innerHtml = '';
+        for (let i = 1; i <= 12; i++) {
+			document.querySelector(`#pies${i}`).innerHTML = '';
+        }
+        const alleDagen = document.querySelectorAll("td[data-aantal]");
+        aantalZiekte = 0
+        aantalNietGeregistreerd = 0;
+        aantalNietVerwacht = 0;
+        aantalDiensten = 0;
+        aantalAanwezig = 0;
+        aantalAfwezig = 0;
+		aantalTeLaat = 0;
+        aantalEerderWeg = 0;
+        aantalThuiswerken = 0;
+		
+		// Initialize monthly counters as arrays
+		let aantalZiekteMaanden = Array(12).fill(0);
+		let aantalNietGeregistreerdMaanden = Array(12).fill(0);
+		let aantalNietVerwachtMaanden = Array(12).fill(0);
+		let aantalDienstenMaanden = Array(12).fill(0);
+		let aantalAanwezigMaanden = Array(12).fill(0);
+		let aantalAfwezigMaanden = Array(12).fill(0);
+		let aantalTeLaatMaanden = Array(12).fill(0);
+        let aantalEerderWegMaanden = Array(12).fill(0);
+        let aantalThuiswerkenMaanden = Array(12).fill(0);
+        
+
+        alleDagen.forEach(function (dag) {
+            var ziekte = dag.getAttribute("data-ziek-aantal");
+            var nietGeregistreerd = dag.getAttribute("data-niet-geregisteerd");
+            var nietVerwacht = dag.getAttribute("data-nv-aantal");
+            var aanwezig = dag.getAttribute("data-aanwezig-aantal");
+            var afwezig = dag.getAttribute("data-afwezig-aantal");
+            var teLaat = dag.getAttribute("data-te-laat-aantal");
+            var eerderWeg = dag.getAttribute("data-eerder-weg-aantal");
+            var Thuiswerken = dag.getAttribute("data-thuiswerken-aantal");
+			
+            if (ziekte != null) {
+                aantalZiekte ++;
+            }
+            if (nietGeregistreerd != null) {
+                aantalNietGeregistreerd ++;
+            } 
+            if (nietVerwacht != null) {
+                aantalNietVerwacht ++;
+            }
+            if(aanwezig !=null || eerderWeg != null || Thuiswerken != null){
+                aantalAanwezig++;
+            }
+            if(afwezig !=null){
+                aantalAfwezig++;
+            }
+			if(teLaat != null){
+				aantalTeLaat++; 
+			}
+            if(eerderWeg !=null) {
+			aantalEerderWeg++;
+		    }
+            if(Thuiswerken !=null) {
+			aantalThuiswerken++;
+		    }
+            aantalDiensten ++ 
+			
+			var monthNumber = dag.getAttribute("data-aantal-maand"); // Example: assuming you have a data-month attribute
+			if (monthNumber >= 1 && monthNumber <= 12) {
+				// Increment the monthly counts based on the day attributes
+				if (ziekte != null) {
+					aantalZiekteMaanden[monthNumber - 1]++; // Month is 1-indexed, array is 0-indexed
+				}
+				if (nietGeregistreerd != null) {
+					aantalNietGeregistreerdMaanden[monthNumber - 1]++;
+				}
+				if(teLaat != null){
+					aantalTeLaatMaanden[monthNumber - 1] ++
+				}
+				if (nietVerwacht != null) {
+					aantalNietVerwachtMaanden[monthNumber - 1]++;
+				}
+				if (aanwezig != null || eerderWeg != null || Thuiswerken != null) { 
+					aantalAanwezigMaanden[monthNumber - 1]++;
+				}
+				if (afwezig != null) {
+					aantalAfwezigMaanden[monthNumber - 1]++;
+				}
+                if (eerderWeg != null) {
+					aantalEerderWegMaanden[monthNumber - 1]++;
+				}
+                if (Thuiswerken != null) {
+					aantalThuiswerkenMaanden[monthNumber - 1]++;
+				}
+				aantalDienstenMaanden[monthNumber - 1]++;
+			}
+
+        });
+		
+        percentageNietGeregistreerd = aantalNietGeregistreerd / aantalDiensten * 100;
+        percentageNietVerwacht = aantalNietVerwacht / aantalDiensten * 100;
+        percentageZiek = aantalZiekte / aantalDiensten * 100;
+        percentageAanwezig = aantalAanwezig / aantalDiensten * 100;
+        percentageAfwezig = aantalAfwezig / aantalDiensten * 100;
+        percentageTeLaat = aantalTeLaat / aantalDiensten * 100;
+        percentageEerderWeg = aantalEerderWeg / aantalDiensten * 100;
+        percentageThuiswerken = aantalThuiswerken / aantalDiensten * 100;
+
+
+
+
+		// Calculate percentages for each month
+		let percentagesPerMonth = {
+			aantalZiekte: [],
+			aantalNietGeregistreerd: [],
+			aantalNietVerwacht: [],
+			aantalAanwezig: [],
+			aantalAfwezig: [],
+			aantalTelaat: [],
+            aantalEerderWeg: [],
+            aantalThuiswerken: []
+		};
+
+		for (let i = 0; i < 12; i++) {
+			percentagesPerMonth.aantalZiekte[i] = (aantalZiekteMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+			percentagesPerMonth.aantalNietGeregistreerd[i] = (aantalNietGeregistreerdMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+			percentagesPerMonth.aantalNietVerwacht[i] = (aantalNietVerwachtMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+			percentagesPerMonth.aantalAanwezig[i] = (aantalAanwezigMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+			percentagesPerMonth.aantalAfwezig[i] = (aantalAfwezigMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+			percentagesPerMonth.aantalTelaat[i] = (aantalTeLaatMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+            percentagesPerMonth.aantalEerderWeg[i] = (aantalEerderWegMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+            percentagesPerMonth.aantalThuiswerken[i] = (aantalThuiswerkenMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+			var pieContainerMonth = document.querySelector(`#pies${i+1}`);
+			
+
+			percentage = percentagesPerMonth.aantalAanwezig[i];
+			createPie("Aanwezig", "aanwezig",`{{settings.colors['Aanwezig']}}`, percentage, pieContainerMonth);
+			percentage = percentagesPerMonth.aantalTelaat[i];
+			createPie("Te laat", "teLaat", `{{settings.colors['Te laat']}}`, percentage, pieContainerMonth);	
+			percentage = percentagesPerMonth.aantalAfwezig[i];
+			createPie("Afwezig", "afwezig",`{{settings.colors['Afwezig']}}`, percentage, pieContainerMonth);
+			percentage = percentagesPerMonth.aantalZiekte[i];
+			createPie("Ziek", "ziek",`{{settings.colors['Ziek']}}`, percentage, pieContainerMonth);
+			percentage = percentagesPerMonth.aantalNietGeregistreerd[i];
+			createPie("Geen registratie", "nietGeregistreerd",`{{settings.colors['Geen registratie']}}`, percentage, pieContainerMonth);
+			percentage = percentagesPerMonth.aantalNietVerwacht[i];
+			createPie("Niet verwachte diensten", "nietVerwacht",`{{settings.colors['Niet verwacht']}}`, percentage, pieContainerMonth);
+            percentage = percentagesPerMonth.aantalEerderWeg[i];
+            createPie("Eerder weg", "eerderWeg",`{{settings.colors['Eerder weg']}}`, percentage, pieContainerMonth);
+            percentage = percentagesPerMonth.aantalThuiswerken[i];
+            createPie("Thuiswerken", "thuiswerken",`{{settings.colors['Thuiswerken']}}`, percentage, pieContainerMonth);
+			
+		}
+
+		// Now percentagesPerMonth contains the percentages for each month
+		console.log(percentagesPerMonth);
+
+
+
+		createPie("Aanwezig", "aanwezig",`{{settings.colors['Aanwezig']}}`, percentageAanwezig, pieContainerYear);
+		createPie("Te laat", "teLaat", `{{settings.colors['Te laat']}}`, percentageTeLaat, pieContainerYear);	
+        createPie("Afwezig", "afwezig",`{{settings.colors['Afwezig']}}`, percentageAfwezig, pieContainerYear);
+        createPie("Ziek", "ziek",`{{settings.colors['Ziek']}}`, percentageZiek, pieContainerYear );
+        createPie("Geen registratie", "nietGeregistreerd", `{{settings.colors['Geen registratie']}}`, percentageNietGeregistreerd , pieContainerYear );
+        createPie("Niet verwachte diensten", "nietVerwacht", `{{settings.colors['Niet verwacht']}}`, percentageNietVerwacht, pieContainerYear );
+        createPie("Eerder weg", "eerderWeg", `{{settings.colors['Eerder weg']}}`, percentageEerderWeg, pieContainerYear );		
+        createPie("Thuiswerken", "thuiswerken", `{{settings.colors['Thuiswerken']}}`, percentageThuiswerken, pieContainerYear );	
+        
+    }
+    resetPie();
+
+        document.addEventListener('DOMContentLoaded', function(){
+            const searchInput = document.querySelector('#searchInput');
+            let userRow = document.querySelectorAll('.userRow');
+
+            searchInput.addEventListener('blur', function() {
+                let filter = this.value.toLowerCase();
+                pieContainerYear.innerHTML = '';
+				for (let i = 1; i <= 12; i++) {
+					document.querySelector(`#pies${i}`).innerHTML = '';
+        		}
+                if (!filter){
+                    userRow.forEach(function(row){
+                        row.style.display = 'table-row';
+                        
+                    })
+                    resetPie();
+                } else {
+                    aantalMedewerkerZiekte = 0;
+                    aantalMedewerkerNietGeregistreerd = 0;
+                    aantalMedewerkerNietVerwacht = 0;
+                    aantalMedewerkerDiensten = 0;
+                    aantalMedewerkerAanwezig = 0;
+                    aantalMedewerkerAfwezig = 0;
+                    aantalMedewerkerTeLaat = 0;
+                    aantalMedewerkerEerderWeg = 0;
+                    aantalMedewerkerThuiswerken = 0;
+					// Initialize monthly counters as arrays
+					let aantalZiekteMaanden = Array(12).fill(0);
+					let aantalNietGeregistreerdMaanden = Array(12).fill(0);
+					let aantalNietVerwachtMaanden = Array(12).fill(0);
+					let aantalDienstenMaanden = Array(12).fill(0);
+					let aantalAanwezigMaanden = Array(12).fill(0);
+					let aantalAfwezigMaanden = Array(12).fill(0);
+					let aantalTeLaatMaanden = Array(12).fill(0);
+                    let aantalEerderWegMaanden = Array(12).fill(0);
+                    let aantalThuiswerkenMaanden = Array(12).fill(0);
+                    alleVerborgen = true;
+
+                    userRow.forEach(function(row){
+                        let username = row.getAttribute('data-medewerker').toLowerCase();
+                        if (username.includes(filter)){
+                            alleVerborgen = false;
+                            row.style.display= 'table-row';
+                            let username = row.getAttribute('data-medewerker');
+                            let usernameLow = username.toLowerCase();
+                            let alleDagenMedewerker = document.querySelectorAll(`td[data-aantal-persoon="${username}"]`);
+                            let personSearch = searchInput.value.toLowerCase();
+                            
+                            alleDagenMedewerker.forEach(function (dag){
+                                var ziekte = dag.getAttribute("data-ziek-aantal");
+                                var teLaat = dag.getAttribute("data-te-laat-aantal");
+                                var nietGeregistreerd = dag.getAttribute("data-niet-geregisteerd");
+                                var nietVerwacht = dag.getAttribute("data-nv-aantal");
+                                var aanwezig = dag.getAttribute("data-aanwezig-aantal");
+                                var afwezig = dag.getAttribute("data-afwezig-aantal");
+                                var eerderWeg = dag.getAttribute("data-eerder-weg-aantal");
+                                var Thuiswerken = dag.getAttribute("data-thuiswerken-aantal");
+                                if (ziekte != null) {
+                                    aantalMedewerkerZiekte ++;
+                                }
+                                if (nietGeregistreerd != null) {
+                                    aantalMedewerkerNietGeregistreerd ++;
+                                } 
+                                if (nietVerwacht != null) {
+                                    aantalMedewerkerNietVerwacht ++;
+                                }
+                                if(aanwezig !=null || eerderWeg != null || Thuiswerken != null){
+                                    aantalMedewerkerAanwezig++;
+                                }
+                                if(afwezig !=null){
+                                    aantalMedewerkerAfwezig++;
+                                }
+                                if(teLaat != null){
+                                    aantalMedewerkerTeLaat ++;
+                                }
+                                if(eerderWeg != null) {
+									aantalMedewerkerEerderWeg ++
+								}
+                                if(Thuiswerken != null) {
+									aantalMedewerkerThuiswerken ++
+								}
+                                aantalMedewerkerDiensten++
+								var monthNumber = dag.getAttribute("data-aantal-maand"); // Example: assuming you have a data-month attribute
+								if (monthNumber >= 1 && monthNumber <= 12) {
+									// Increment the monthly counts based on the day attributes
+									if (ziekte != null) {
+										aantalZiekteMaanden[monthNumber - 1]++; // Month is 1-indexed, array is 0-indexed
+									}
+									if (nietGeregistreerd != null) {
+										aantalNietGeregistreerdMaanden[monthNumber - 1]++;
+									}
+									if(teLaat != null){
+										aantalTeLaatMaanden[monthNumber - 1] ++
+									}
+									if (nietVerwacht != null) {
+										aantalNietVerwachtMaanden[monthNumber - 1]++;
+									}
+									if (aanwezig != null || eerderWeg != null || Thuiswerken != null) { 
+										aantalAanwezigMaanden[monthNumber - 1]++;
+									}
+									if (afwezig != null) {
+										aantalAfwezigMaanden[monthNumber - 1]++;
+									}
+                                    if (eerderWeg != null) {
+										aantalEerderWegMaanden[monthNumber - 1]++;
+									}
+                                    if (Thuiswerken != null) {
+										aantalThuiswerkenMaanden[monthNumber - 1]++;
+									}
+									aantalDienstenMaanden[monthNumber - 1]++;
+								}
+                            });
+                        }
+                        else{
+                            row.style.display = 'none';
+                        }
+                    })
+
+
+
+					// Calculate percentages for each month
+					let percentagesPerMonth = {
+						aantalZiekte: [],
+						aantalNietGeregistreerd: [],
+						aantalNietVerwacht: [],
+						aantalAanwezig: [],
+						aantalAfwezig: [],
+						aantalTelaat: [],
+                        aantalEerderWeg: [],
+                        aantalThuiswerken: []
+					};
+
+					for (let i = 0; i < 12; i++) {
+						percentagesPerMonth.aantalZiekte[i] = (aantalZiekteMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+						percentagesPerMonth.aantalNietGeregistreerd[i] = (aantalNietGeregistreerdMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+						percentagesPerMonth.aantalNietVerwacht[i] = (aantalNietVerwachtMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+						percentagesPerMonth.aantalAanwezig[i] = (aantalAanwezigMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+						percentagesPerMonth.aantalAfwezig[i] = (aantalAfwezigMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+						percentagesPerMonth.aantalTelaat[i] = (aantalTeLaatMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+                        percentagesPerMonth.aantalEerderWeg[i] = (aantalEerderWegMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+                        percentagesPerMonth.aantalThuiswerken[i] = (aantalThuiswerkenMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+						var pieContainerMonth = document.querySelector(`#pies${i+1}`);
+						
+
+                        percentage = percentagesPerMonth.aantalAanwezig[i];
+						createPie("Aanwezig", "aanwezig",`{{settings.colors['Aanwezig']}}`, percentage, pieContainerMonth);
+						percentage = percentagesPerMonth.aantalTelaat[i];
+						createPie("Te laat", "teLaat", `{{settings.colors['Te laat']}}`, percentage, pieContainerMonth);	
+						percentage = percentagesPerMonth.aantalAfwezig[i];
+						createPie("Afwezig", "afwezig",`{{settings.colors['Afwezig']}}`, percentage, pieContainerMonth);
+						percentage = percentagesPerMonth.aantalZiekte[i];
+						createPie("Ziek", "ziek",`{{settings.colors['Ziek']}}`, percentage, pieContainerMonth);
+						percentage = percentagesPerMonth.aantalNietGeregistreerd[i];
+						createPie("Geen registratie", "nietGeregistreerd",`{{settings.colors['Geen registratie']}}`, percentage, pieContainerMonth);
+						percentage = percentagesPerMonth.aantalNietVerwacht[i];
+						createPie("Niet verwachte diensten", "nietVerwacht",`{{settings.colors['Niet verwacht']}}`, percentage, pieContainerMonth);
+                        percentage = percentagesPerMonth.aantalEerderWeg[i];
+						createPie("Eerder weg", "eerderWeg",`{{settings.colors['Eerder weg']}}`, percentage, pieContainerMonth);
+                        percentage = percentagesPerMonth.aantalThuiswerken[i];
+						createPie("Thuiswerken", "thuiswerken",`{{settings.colors['Thuiswerken']}}`, percentage, pieContainerMonth);
+						
+					}
+                    let percentageMedewerkerNietGeregistreerd = aantalMedewerkerNietGeregistreerd / aantalMedewerkerDiensten * 100;
+                    let percentageMedewerkerNietVerwacht = aantalMedewerkerNietVerwacht / aantalMedewerkerDiensten * 100;
+                    let percentageMedewerkerZiek = aantalMedewerkerZiekte / aantalMedewerkerDiensten * 100;
+                    let percentageMedewerkerAanwezig = aantalMedewerkerAanwezig / aantalMedewerkerDiensten * 100;
+                    let percentageMedewerkerAfwezig = aantalMedewerkerAfwezig / aantalMedewerkerDiensten * 100;
+                    let percentageMedewerkerTeLaat = aantalMedewerkerTeLaat / aantalMedewerkerDiensten * 100;
+                    let percentageMedewerkerEerderWeg = aantalMedewerkerEerderWeg / aantalMedewerkerDiensten * 100;
+                    let percentageMedewerkerThuiswerken = aantalMedewerkerThuiswerken / aantalMedewerkerDiensten * 100;
+
+
+                        createPie("Aanwezig", "aanwezig",`{{settings.colors['Aanwezig']}}`, percentageMedewerkerAanwezig, pieContainerYear);
+
+                        createPie("Te laat", "teLaat", `{{settings.colors['Te laat']}}`, percentageMedewerkerTeLaat, pieContainerYear);	
+
+                        createPie("Afwezig", "afwezig",`{{settings.colors['Afwezig']}}`, percentageMedewerkerAfwezig, pieContainerYear);
+
+                        createPie("Ziek", "ziek",`{{settings.colors['Ziek']}}`, percentageMedewerkerZiek, pieContainerYear);
+
+                        createPie("Geen registratie", "nietGeregistreerd", `{{settings.colors['Geen registratie']}}`, percentageMedewerkerNietGeregistreerd, pieContainerYear);
+                    
+                        createPie("Niet verwachte diensten", "nietVerwacht", `{{settings.colors['Niet verwacht']}}`, percentageMedewerkerNietVerwacht, pieContainerYear);	
+
+                        createPie("Eerder weg", "eerderWeg", `{{settings.colors['Eerder weg']}}`, percentageMedewerkerEerderWeg, pieContainerYear);	
+
+                        createPie("Thuiswerken", "thuiswerken", `{{settings.colors['Thuiswerken']}}`, percentageMedewerkerThuiswerken, pieContainerYear);	
+                    
+                    if(alleVerborgen){
+                        pieContainerYear.innerHTML = '';
+										for (let i = 1; i <= 12; i++) {
+					document.querySelector(`#pies${i}`).innerHTML = '';
+        		}
+                    } 
+                }
+            })
+
+
+
+
+
+            let departmentSelector = document.querySelector('#departmentSelector')
+                departmentSelector.addEventListener('change',function(){
+                    let filter = departmentSelector.value;
+                    pieContainerYear.innerHTML = '';
+					for (let i = 1; i <= 12; i++) {
+						document.querySelector(`#pies${i}`).innerHTML = '';
+					}
+                    if (filter == 'All' ){
+                        userRow.forEach(function(row){
+                            row.style.display = 'table-row';
+                            
+                        })
+                        resetPie();
+                    } else {
+                        aantalMedewerkerZiekte = 0;
+                        aantalMedewerkerNietGeregistreerd = 0;
+                        aantalMedewerkerNietVerwacht = 0;
+                        aantalMedewerkerDiensten = 0;
+                        aantalMedewerkerAanwezig = 0;
+                        aantalMedewerkerAfwezig = 0;
+                        aantalMedewerkerTeLaat = 0;
+                        aantalMedewerkerEerderWeg = 0;
+                        aantalMedewerkerThuiswerken = 0;
+						let aantalZiekteMaanden = Array(12).fill(0);
+						let aantalNietGeregistreerdMaanden = Array(12).fill(0);
+						let aantalNietVerwachtMaanden = Array(12).fill(0);
+						let aantalDienstenMaanden = Array(12).fill(0);
+						let aantalAanwezigMaanden = Array(12).fill(0);
+						let aantalAfwezigMaanden = Array(12).fill(0);
+						let aantalTeLaatMaanden = Array(12).fill(0);
+                        let aantalEerderWegMaanden = Array(12).fill(0);
+                        let aantalThuiswerkenMaanden = Array(12).fill(0);
+                        alleVerborgen = true;
+
+                        userRow.forEach(function(row){
+                            let userDepartment = row.getAttribute('data-department');
+                            if (userDepartment.includes(filter)){
+                                alleVerborgen = false;
+                                row.style.display= 'table-row';
+                                let username = row.getAttribute('data-medewerker');
+                                let usernameLow = username.toLowerCase();
+                                let alleDagenMedewerker = document.querySelectorAll(`td[data-aantal-persoon="${username}"]`);
+                                let personSearch = searchInput.value.toLowerCase();
+                                
+                                alleDagenMedewerker.forEach(function (dag){
+                                    var ziekte = dag.getAttribute("data-ziek-aantal");
+                                    var teLaat = dag.getAttribute("data-te-laat-aantal");
+                                    var nietGeregistreerd = dag.getAttribute("data-niet-geregisteerd");
+                                    var nietVerwacht = dag.getAttribute("data-nv-aantal");
+                                    var aanwezig = dag.getAttribute("data-aanwezig-aantal");
+                                    var afwezig = dag.getAttribute("data-afwezig-aantal");
+                                    var eerderWeg = dag.getAttribute("data-eerder-weg-aantal");
+                                    var Thuiswerken = dag.getAttribute("data-thuiswerken-aantal");
+                                    if (ziekte != null) {
+                                        aantalMedewerkerZiekte ++;
+                                    }
+                                    if (nietGeregistreerd != null) {
+                                        aantalMedewerkerNietGeregistreerd ++;
+                                    } 
+                                    if (nietVerwacht != null) {
+                                        aantalMedewerkerNietVerwacht ++;
+                                    }
+                                    if(aanwezig !=null || eerderWeg != null || Thuiswerken != null){ 
+                                        aantalMedewerkerAanwezig++;
+                                    }
+                                    if(afwezig !=null){
+                                        aantalMedewerkerAfwezig++;
+                                    }
+                                    if(teLaat != null){
+                                        aantalMedewerkerTeLaat ++;
+                                    }
+                                    if(eerderWeg != null){
+									aantalMedewerkerEerderWeg ++;
+								    }
+                                    if(Thuiswerken != null){
+									aantalMedewerkerThuiswerken ++;
+								    }
+                                    aantalMedewerkerDiensten++
+									var monthNumber = dag.getAttribute("data-aantal-maand"); // Example: assuming you have a data-month attribute
+									if (monthNumber >= 1 && monthNumber <= 12) {
+										// Increment the monthly counts based on the day attributes
+										if (ziekte != null) {
+											aantalZiekteMaanden[monthNumber - 1]++; // Month is 1-indexed, array is 0-indexed
+										}
+										if (nietGeregistreerd != null) {
+											aantalNietGeregistreerdMaanden[monthNumber - 1]++;
+										}
+										if(teLaat != null){
+											aantalTeLaatMaanden[monthNumber - 1] ++
+										}
+										if (nietVerwacht != null) {
+											aantalNietVerwachtMaanden[monthNumber - 1]++;
+										}
+										if (aanwezig != null || eerderWeg != null || Thuiswerken != null) { 
+											aantalAanwezigMaanden[monthNumber - 1]++;
+										}
+										if (afwezig != null) {
+											aantalAfwezigMaanden[monthNumber - 1]++;
+										}
+                                        if (eerderWeg != null) {
+											aantalEerderWegMaanden[monthNumber - 1]++;
+										}
+                                        if (Thuiswerken != null) {
+											aantalThuiswerkenMaanden[monthNumber - 1]++;
+										}
+										aantalDienstenMaanden[monthNumber - 1]++;
+									}
+                                });
+                            }
+                            else{
+                                row.style.display = 'none';
+                            }
+                        })
+						// Calculate percentages for each month
+						let percentagesPerMonth = {
+							aantalZiekte: [],
+							aantalNietGeregistreerd: [],
+							aantalNietVerwacht: [],
+							aantalAanwezig: [],
+							aantalAfwezig: [],
+							aantalTelaat: [],
+                            aantalEerderWeg: [],
+                            aantalThuiswerken: []
+
+						};
+
+						for (let i = 0; i < 12; i++) {
+							percentagesPerMonth.aantalZiekte[i] = (aantalZiekteMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+							percentagesPerMonth.aantalNietGeregistreerd[i] = (aantalNietGeregistreerdMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+							percentagesPerMonth.aantalNietVerwacht[i] = (aantalNietVerwachtMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+							percentagesPerMonth.aantalAanwezig[i] = (aantalAanwezigMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+							percentagesPerMonth.aantalAfwezig[i] = (aantalAfwezigMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+							percentagesPerMonth.aantalTelaat[i] = (aantalTeLaatMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+                            percentagesPerMonth.aantalEerderWeg[i] = (aantalEerderWegMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+                            percentagesPerMonth.aantalThuiswerken[i] = (aantalThuiswerkenMaanden[i] / aantalDienstenMaanden[i] * 100) || 0;
+							var pieContainerMonth = document.querySelector(`#pies${i+1}`);
+							
+
+							percentage = percentagesPerMonth.aantalAanwezig[i];
+							createPie("Aanwezig", "aanwezig",`{{settings.colors['Aanwezig']}}`, percentage, pieContainerMonth);
+							percentage = percentagesPerMonth.aantalTelaat[i];
+							createPie("Te laat", "teLaat", `{{settings.colors['Te laat']}}`, percentage, pieContainerMonth);	
+							percentage = percentagesPerMonth.aantalAfwezig[i];
+							createPie("Afwezig", "afwezig",`{{settings.colors['Afwezig']}}`, percentage, pieContainerMonth);
+							percentage = percentagesPerMonth.aantalZiekte[i];
+							createPie("Ziek", "ziek",`{{settings.colors['Ziek']}}`, percentage, pieContainerMonth);
+							percentage = percentagesPerMonth.aantalNietGeregistreerd[i];
+							createPie("Geen registratie", "nietGeregistreerd",`{{settings.colors['Geen registratie']}}`, percentage, pieContainerMonth);
+							percentage = percentagesPerMonth.aantalNietVerwacht[i];
+							createPie("Niet verwachte diensten", "nietVerwacht",`{{settings.colors['Niet verwacht']}}`, percentage, pieContainerMonth);
+                            percentage = percentagesPerMonth.aantalEerderWeg[i];
+							createPie("Eerder weg", "eerderWeg",`{{settings.colors['Eerder weg']}}`, percentage, pieContainerMonth);
+                            percentage = percentagesPerMonth.aantalThuiswerken[i];
+							createPie("Thuiswerken", "thuiswerken",`{{settings.colors['Thuiswerken']}}`, percentage, pieContainerMonth);
+							
+						}
+                        let percentageMedewerkerNietGeregistreerd = aantalMedewerkerNietGeregistreerd / aantalMedewerkerDiensten * 100;
+                        let percentageMedewerkerNietVerwacht = aantalMedewerkerNietVerwacht / aantalMedewerkerDiensten * 100;
+                        let percentageMedewerkerZiek = aantalMedewerkerZiekte / aantalMedewerkerDiensten * 100;
+                        let percentageMedewerkerAanwezig = aantalMedewerkerAanwezig / aantalMedewerkerDiensten * 100;
+                        let percentageMedewerkerAfwezig = aantalMedewerkerAfwezig / aantalMedewerkerDiensten * 100;
+                        let percentageMedewerkerTeLaat = aantalMedewerkerTeLaat / aantalMedewerkerDiensten * 100;
+                        let percentageMedewerkerEerderWeg = aantalMedewerkerEerderWeg / aantalMedewerkerDiensten * 100;
+                        let percentageMedewerkerThuiswerken = aantalMedewerkerThuiswerken / aantalMedewerkerDiensten * 100;
+
+                            createPie("Aanwezig", "aanwezig",`{{settings.colors['Aanwezig']}}`, percentageMedewerkerAanwezig, pieContainerYear);
+
+                            createPie("Te laat", "teLaat", `{{settings.colors['Te laat']}}`, percentageMedewerkerTeLaat, pieContainerYear);	
+
+                            createPie("Afwezig", "afwezig",`{{settings.colors['Afwezig']}}`, percentageMedewerkerAfwezig, pieContainerYear);
+ 
+                            createPie("Ziek", "ziek",`{{settings.colors['Ziek']}}`, percentageMedewerkerZiek, pieContainerYear);
+
+                            createPie("Geen registratie", "nietGeregistreerd", `{{settings.colors['Geen registratie']}}`, percentageMedewerkerNietGeregistreerd, pieContainerYear);
+
+                            createPie("Niet verwachte diensten", "nietVerwacht", `{{settings.colors['Niet verwacht']}}`, percentageMedewerkerNietVerwacht, pieContainerYear);	
+
+                            createPie("Eerder weg", "eerderWeg", `{{settings.colors['Eerder weg']}}`, percentageMedewerkerEerderWeg, pieContainerYear);	
+
+                            createPie("Thuiswerken", "thuiswerken", `{{settings.colors['Thuiswerken']}}`, percentageMedewerkerThuiswerken, pieContainerYear);	
+
+                        if(alleVerborgen){
+                            pieContainerYear.innerHTML = '';
+											for (let i = 1; i <= 12; i++) {
+					document.querySelector(`#pies${i}`).innerHTML = '';
+        		}
+                        } 
+                    }
+                })
+
+
+            })
+            
+            function setCookie(search, value, days) {
+        var expires = "";
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = search + "=" + (value || "") + expires + "; path=/";
+    }
+
+    // Function to get a cookie
+    function getCookie(search) {
+        var searchEQ = search + "=";
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+            if (c.indexOf(searchEQ) === 0) return c.substring(searchEQ.length, c.length);
+        }
+        return null;
+    }
+
+	document.addEventListener('DOMContentLoaded', function() {
+		searchInput.value = getCookie('searchedName') || '';
+		let inputText = searchInput.value.trim();
+        let selectedNames = inputText.length > 0 ? inputText.split(',').map(name => name.trim()) : [];
+       
+        if (selectedNames.length > 0) {
+            updatePies(selectedNames); 
+            updateTable(selectedNames); 
+        }
+		searchInput.addEventListener('change', function() {
+        setCookie('searchedName', searchInput.value, 1);
+    });
+	});
+
+	document.addEventListener('DOMContentLoaded', function() {
+		departmentSelector.value = getCookie('searchedDepartment') || '';
+		let inputText = departmentSelector.value.trim();
+        let selectedDepartment = inputText.length > 0 ? inputText.split(',').map(name => name.trim()) : [];
+       
+   //     if (selectedNames.length > 0) {
+          //  updatePies(selectedNames); 
+           // updateTable(selectedNames); 
+       // }
+	   departmentSelector.addEventListener('change', function() {
+        	setCookie('searchedDepartment', departmentSelector.value, 1);
+    	});
+	});
+</script>
+{% endblock %}

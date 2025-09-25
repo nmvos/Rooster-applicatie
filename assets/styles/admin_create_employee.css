@@ -1,0 +1,93 @@
+form {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+#meeloper_registration_form_removeDate{
+  display:flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+#meeloper_registration_form_removeDate > label {
+  width:95%;
+}
+#meeloper_registration_form_removeDate > input {
+  width:2%;
+  margin-right: 2%;
+}
+input[type="text"],
+input[type="password"],
+#registration_form_department {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 25px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 15px;
+}
+
+label {
+  display: block;
+  text-align: left;
+  color: #0E6281; 
+  font-size: 16px;
+  font-weight: 600;
+}
+
+
+
+#registration_form_roles {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 15px;
+}
+
+#registration_form_profile_department {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 15px;
+}
+
+.departmentLabel {
+  margin-top: 15px;
+}
+
+/* Responsiviteit voor tablets en mobiele apparaten */
+@media screen and (max-width: 1024px) {
+  form {
+    width: 75%;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  form {
+    width: 80%;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  h1 {
+    font-size: 20px;
+  }
+
+  .btn {
+    font-size: 16px;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  #registration_form_department {
+    font-size: 14px;
+  }
+}
